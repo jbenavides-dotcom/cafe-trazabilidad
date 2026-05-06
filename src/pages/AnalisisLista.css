@@ -1,0 +1,178 @@
+.analisis-lista { max-width: 1100px; margin: 0 auto; }
+
+.al-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+.al-header h1 {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  margin-bottom: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+.al-subtitle {
+  color: var(--color-gray-medium);
+  font-style: italic;
+  font-size: 0.95rem;
+}
+
+/* Tono según tipo */
+.tone-fisico h1 { color: var(--color-navy); }
+.tone-fisico h1 svg { color: var(--color-tan); }
+.tone-sensorial h1 { color: var(--color-navy); }
+.tone-sensorial h1 svg { color: var(--color-brand-red); }
+
+/* Stats */
+.al-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md);
+}
+.al-stat {
+  text-align: center;
+  padding: var(--spacing-sm);
+  border-right: 1px solid var(--color-gray-light);
+}
+.al-stat:last-child { border-right: none; }
+.al-stat-num {
+  font-family: var(--font-serif);
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: var(--color-navy);
+  line-height: 1;
+}
+.al-stat-label {
+  font-size: 0.75rem;
+  color: var(--color-gray-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0.4rem;
+}
+
+/* Tabs */
+.al-tabs {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-gray-light);
+}
+.al-tab {
+  padding: 0.6rem 1rem;
+  background: none;
+  border: none;
+  font-size: 0.9rem;
+  color: var(--color-gray-medium);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: all 0.2s;
+}
+.al-tab:hover { color: var(--color-navy); }
+.al-tab.active {
+  color: var(--color-navy);
+  border-bottom-color: var(--color-tan);
+  font-weight: 500;
+}
+
+.al-loading { display: flex; justify-content: center; padding: 4rem; }
+
+.al-empty {
+  text-align: center;
+  padding: var(--spacing-lg);
+  color: var(--color-gray-medium);
+}
+.al-empty svg {
+  color: var(--color-state-aprobado);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Rows */
+.al-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+.al-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 100px 160px 160px;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+}
+.al-row:hover {
+  border-left-color: var(--color-tan);
+  transform: translateX(2px);
+}
+.al-row.completado {
+  opacity: 0.7;
+  border-left-color: var(--color-state-aprobado);
+}
+
+.al-row-numero strong {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  color: var(--color-navy);
+  display: block;
+}
+.al-row-numero small {
+  font-size: 0.7rem;
+  color: var(--color-gray-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.al-row-vp strong {
+  display: block;
+  color: var(--color-navy);
+}
+.al-row-vp small {
+  font-size: 0.8rem;
+  color: var(--color-gray-medium);
+  font-style: italic;
+}
+
+.al-row-kg strong {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  color: var(--color-tan);
+}
+.al-row-kg small {
+  font-size: 0.7rem;
+  color: var(--color-gray-medium);
+}
+
+.al-row-status { text-align: center; }
+
+.al-row-cta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--color-tan);
+  font-weight: 500;
+}
+
+@media (max-width: 800px) {
+  .al-row {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+  }
+  .al-row-status, .al-row-cta { grid-column: span 2; }
+  .al-row-cta { justify-content: flex-start; }
+  .al-stats { grid-template-columns: 1fr; }
+  .al-stat { border-right: none; border-bottom: 1px solid var(--color-gray-light); }
+  .al-stat:last-child { border-bottom: none; }
+}

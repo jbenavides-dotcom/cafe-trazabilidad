@@ -1,0 +1,25 @@
+node_modules
+dist
+dist-ssr
+*.local
+*.tsbuildinfo
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Secrets (regla: nunca commitear secretos a repos públicos)
+.env
+.env.*
+!.env.example
+secrets.*
+credentials.*
+*.key
+*-key.json
+service-account*.json
+

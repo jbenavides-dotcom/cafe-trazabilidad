@@ -1,0 +1,174 @@
+.analisis-sensorial { max-width: 900px; margin: 0 auto; }
+
+.as-loading { display: flex; justify-content: center; padding: 4rem; }
+
+.as-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+.as-header h1 {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  margin-bottom: var(--spacing-xs);
+}
+.as-subtitle { color: var(--color-gray-medium); font-style: italic; }
+
+/* SCA display tipo "speedometer" */
+.sca-display {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 2rem;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+  border-top: 4px solid var(--color-navy);
+  min-width: 180px;
+}
+.sca-display.sca-green { border-top-color: var(--color-state-aprobado); }
+.sca-display.sca-tan   { border-top-color: var(--color-tan); }
+.sca-display.sca-navy  { border-top-color: var(--color-navy); }
+.sca-display.sca-red   { border-top-color: var(--color-brand-red); }
+
+.sca-value {
+  font-family: var(--font-serif);
+  font-size: 3rem;
+  font-weight: 600;
+  color: var(--color-navy);
+  line-height: 1;
+}
+.sca-label {
+  font-size: 0.7rem;
+  color: var(--color-gray-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0.3rem;
+}
+.sca-clasif {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--color-tan);
+  margin-top: 0.4rem;
+}
+
+.as-form { display: flex; flex-direction: column; gap: var(--spacing-md); }
+.as-form section.card h2 {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  margin-bottom: var(--spacing-md);
+}
+
+/* ─── Puntajes grid ─── */
+.puntajes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-md);
+}
+.puntaje-card {
+  background: var(--color-gray-light);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+}
+.puntaje-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-navy);
+  margin-bottom: var(--spacing-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.puntaje-input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+.puntaje-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: var(--color-gray-medium);
+  border-radius: var(--radius-pill);
+  outline: none;
+}
+.puntaje-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  background: var(--color-tan);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+.puntaje-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  background: var(--color-tan);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+.puntaje-number {
+  width: 70px;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--color-gray-medium);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--color-navy);
+}
+
+/* ─── Decision card ─── */
+.decision-card { background: linear-gradient(135deg, var(--color-white) 0%, #f6f0ec 100%); }
+.decision-hint {
+  color: var(--color-gray-medium);
+  font-size: 0.9rem;
+  margin-bottom: var(--spacing-md);
+  font-style: italic;
+}
+.decision-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+.decision-btn {
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  border: 2px solid var(--color-gray-light);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--color-dark-text);
+  transition: all 0.2s;
+}
+.decision-btn:hover { border-color: var(--color-gray-medium); }
+.decision-btn small {
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: var(--color-gray-medium);
+  font-style: italic;
+}
+.decision-btn.active.aprobado {
+  border-color: var(--color-state-aprobado);
+  background: rgba(45, 106, 79, 0.08);
+  color: var(--color-state-aprobado);
+}
+.decision-btn.active.rechazado {
+  border-color: var(--color-brand-red);
+  background: rgba(193, 0, 74, 0.08);
+  color: var(--color-brand-red);
+}
+
+@media (max-width: 600px) {
+  .as-header { flex-direction: column-reverse; }
+  .sca-display { width: 100%; }
+  .decision-buttons { grid-template-columns: 1fr; }
+}

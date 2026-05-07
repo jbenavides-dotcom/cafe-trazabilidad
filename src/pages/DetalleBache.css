@@ -224,3 +224,206 @@
   font-style: italic;
   font-size: 0.85rem;
 }
+
+/* ─── Ficha AF / AS (vista historial completa) ─── */
+.ficha-af, .ficha-as { padding: var(--spacing-md) var(--spacing-lg); }
+
+.ficha-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-gray-light);
+}
+.ficha-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  margin: 0;
+  color: var(--color-navy);
+}
+.ficha-edit-link {
+  font-size: 0.85rem;
+  color: var(--color-tan);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--color-tan);
+  border-radius: var(--radius-sm);
+  transition: all 0.15s;
+}
+.ficha-edit-link:hover {
+  background: var(--color-tan);
+  color: var(--color-white);
+}
+
+.ficha-meta {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--color-gray-medium);
+  margin-bottom: var(--spacing-md);
+}
+.ficha-meta strong { color: var(--color-navy); font-weight: 500; }
+
+.as-estado-pill {
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.as-estado-pill.estado-aprobado {
+  background: rgba(45, 106, 79, 0.15);
+  color: var(--color-state-aprobado);
+}
+.as-estado-pill.estado-rechazado {
+  background: rgba(193, 0, 74, 0.12);
+  color: var(--color-brand-red);
+}
+
+.ficha-section {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-gray-light);
+}
+.ficha-section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+.ficha-section h3 {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  color: var(--color-navy);
+  margin-bottom: var(--spacing-sm);
+}
+.ficha-section h3 small {
+  font-family: var(--font-sans);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: var(--color-gray-medium);
+}
+
+.ficha-obs {
+  background: var(--color-gray-light);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-tan);
+  font-size: 0.9rem;
+  color: var(--color-navy);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* SCA total destacado */
+.ficha-sca-display {
+  text-align: center;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  border: 2px solid var(--color-navy);
+  margin-bottom: var(--spacing-md);
+  max-width: 280px;
+  margin-inline: auto;
+}
+.ficha-sca-display.sca-green { border-color: var(--color-state-aprobado); }
+.ficha-sca-display.sca-tan   { border-color: var(--color-tan); }
+.ficha-sca-display.sca-navy  { border-color: var(--color-navy); }
+.ficha-sca-display.sca-red   { border-color: var(--color-brand-red); }
+.ficha-sca-num {
+  font-family: var(--font-serif);
+  font-size: 3rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--color-navy);
+}
+.ficha-sca-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-gray-medium);
+  margin-top: 0.4rem;
+}
+
+/* Mallas con barras */
+.ficha-mallas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.ficha-malla { display: flex; flex-direction: column; gap: 0.2rem; }
+.malla-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--color-navy);
+}
+.malla-name { font-weight: 500; }
+.malla-g { color: var(--color-gray-medium); font-family: var(--font-serif); }
+.malla-bar {
+  height: 8px;
+  background: var(--color-gray-light);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.malla-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-tan), var(--color-navy));
+  transition: width 0.3s;
+}
+
+/* Defectos detallados */
+.ficha-defectos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.5rem;
+}
+.ficha-defecto {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0.6rem;
+  background: var(--color-gray-light);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+.def-label { color: var(--color-navy); }
+.def-valor {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  color: var(--color-tan);
+}
+
+/* Puntajes SCA con barras */
+.ficha-puntajes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--spacing-sm);
+}
+.ficha-puntaje { display: flex; flex-direction: column; gap: 0.25rem; }
+.puntaje-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--color-navy);
+}
+.puntaje-name { font-weight: 500; }
+.puntaje-num { font-family: var(--font-serif); font-weight: 600; color: var(--color-tan); }
+.puntaje-bar {
+  height: 6px;
+  background: var(--color-gray-light);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.puntaje-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-state-aprobado), var(--color-tan));
+  transition: width 0.3s;
+}
+
+.ficha-perfil-macro, .ficha-perfil-notas { margin: 0.5rem 0; color: var(--color-navy); }
+.ficha-perfil-macro strong, .ficha-perfil-notas strong { color: var(--color-tan); }

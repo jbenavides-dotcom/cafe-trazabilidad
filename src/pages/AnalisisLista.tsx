@@ -103,21 +103,25 @@ export default function AnalisisLista({ tipo }: Props) {
   const config = tipo === 'fisico'
     ? {
         title: 'Análisis Físico',
-        subtitle: 'Sergio · humedad, mallas, defectos, excelso final',
+        subtitle: 'Humedad, mallas (criba), defectos, excelso final',
         Icon: Beaker,
         toneClass: 'tone-fisico',
-        rutaAccion: (b: string) => `/baches/${b}/fisico`,
+        rutaPendiente: (b: string) => `/baches/${b}/fisico`,
+        rutaCompletado: (b: string) => `/baches/${b}`,
         emptyMsg: 'No hay baches pendientes de análisis físico. Cambia un bache a «Entregado a Analisis» en CFF para que aparezca aquí.',
-        ctaLabel: 'Hacer análisis físico',
+        ctaPendiente: 'Hacer análisis físico',
+        ctaCompletado: 'Ver ficha',
       }
     : {
         title: 'Análisis Sensorial',
-        subtitle: 'Ismelda · 10 atributos SCA, perfil, decisión APROBADO/RECHAZADO',
+        subtitle: '10 atributos SCA, perfil, decisión APROBADO/RECHAZADO',
         Icon: FlaskConical,
         toneClass: 'tone-sensorial',
-        rutaAccion: (b: string) => `/baches/${b}/sensorial`,
-        emptyMsg: 'No hay baches pendientes de análisis sensorial. Primero Sergio debe completar el AF.',
-        ctaLabel: 'Catar bache',
+        rutaPendiente: (b: string) => `/baches/${b}/sensorial`,
+        rutaCompletado: (b: string) => `/baches/${b}`,
+        emptyMsg: 'No hay baches pendientes de análisis sensorial. Primero hay que completar el análisis físico.',
+        ctaPendiente: 'Catar bache',
+        ctaCompletado: 'Ver ficha',
       }
 
   const lista = verTodos ? items : pendientes
@@ -175,10 +179,11 @@ export default function AnalisisLista({ tipo }: Props) {
         <div className="al-rows">
           {lista.map(it => {
             const completado = tipo === 'fisico' ? it.af_done : (it.as_estado === 'APROBADO' || it.as_estado === 'RECHAZADO')
+            const ruta = completado ? config.rutaCompletado(it.numero) : config.rutaPendiente(it.numero)
             return (
               <Link
                 key={it.numero}
-                to={config.rutaAccion(it.numero)}
+                to={ruta}
                 className={`al-row card ${completado ? 'completado' : ''}`}
               >
                 <div className="al-row-numero">
@@ -205,7 +210,7 @@ export default function AnalisisLista({ tipo }: Props) {
                   )}
                 </div>
                 <div className="al-row-cta">
-                  <span>{completado ? 'Editar' : config.ctaLabel}</span>
+                  <span>{completado ? config.ctaCompletado : config.ctaPendiente}</span>
                   <ChevronRight size={18} />
                 </div>
               </Link>

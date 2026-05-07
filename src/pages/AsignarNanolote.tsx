@@ -49,55 +49,66 @@ export default function AsignarNanolote() {
       const mxv = data['MX_V!A4:N120']
       const as_rows = data['AS!B2:T200']
 
-      // Construir bloques iterando las filas summary conocidas
+      // Detección DINÁMICA de bloques: una fila es summary cuando col A tiene
+      // un código tipo PTNLG/PTNLS/etc. O cuando está en MXV_SUMMARY_ROWS (fila
+      // pre-construida con fórmulas, vacía a la espera de un código).
       const bloques_: Bloque[] = []
       const bachesAsignados = new Set<string>()
+      const REGEX_CODIGO_NANOLOTE = /^PT[A-Z]{2,3}\d{4,5}$/i
 
-      for (let i = 0; i < MXV_SUMMARY_ROWS.length; i++) {
-        const filaSum = MXV_SUMMARY_ROWS[i]
-        const filaSumNext = MXV_SUMMARY_ROWS[i + 1] ?? filaSum + 8
-        const idx = filaSum - HEADER_ROW
-        if (idx < 0 || idx >= mxv.length) continue
-        const summary_row = mxv[idx]
-        const codigo = (summary_row[0] || '').trim()
+      let bloqueActual: Bloque | null = null
 
-        const baches_bloque: Bloque['baches'] = []
-        const filas_disp: number[] = []
-        // Baches del bloque: TODAS las filas entre la summary y la siguiente summary,
-        // detectados por col B (Batch). Si col B vacía → fila disponible.
-        // Excluimos la fila summary misma y la fila "Observaciones" (col A == "Observaciones")
-        for (let f = filaSum + 1; f < filaSumNext; f++) {
-          const idxB = f - HEADER_ROW
-          if (idxB >= mxv.length) break
-          const r = mxv[idxB]
-          const colA = (r[0] || '').trim()
-          const batch = (r[1] || '').trim()
-          // Saltar fila explícita "Observaciones" (si existe)
-          if (colA.toLowerCase() === 'observaciones') continue
-          if (batch && !batch.startsWith('#') && batch !== 'Batch') {
-            baches_bloque.push({
-              fila: f,
-              batch,
-              variedad: r[2] || '',
-              proceso: r[3] || '',
-              sca: r[13] || '',
-            })
-            bachesAsignados.add(batch)
-          } else {
-            filas_disp.push(f)
+      for (let i = 0; i < mxv.length; i++) {
+        const fila = i + HEADER_ROW + 1  // mxv[0] = R5 (porque rango empieza en R4 que es header)
+        // Pero el rango leído es A4:N120, entonces mxv[0] = R4 (header)
+        // Ajusto:
+        const filaReal = i + HEADER_ROW  // mxv[0] = R4, mxv[1] = R5, ...
+        if (filaReal === HEADER_ROW) continue  // saltar header
+        void fila  // suprimir TS
+
+        const r = mxv[i]
+        const colA = (r[0] || '').trim()
+        const colB = (r[1] || '').trim()
+
+        const esSummaryConCodigo = REGEX_CODIGO_NANOLOTE.test(colA)
+        const esSummaryVacia = !colA && MXV_SUMMARY_ROWS.includes(filaReal)
+
+        if (esSummaryConCodigo || esSummaryVacia) {
+          // Cerrar bloque anterior
+          if (bloqueActual) bloques_.push(bloqueActual)
+          // Abrir nuevo
+          bloqueActual = {
+            fila_summary: filaReal,
+            codigo_nanolote: esSummaryConCodigo ? colA : '',
+            baches: [],
+            excelso_kg: r[12] || '',
+            filas_disponibles: [],
           }
+          continue
         }
 
-        // Solo incluir bloque si tiene código o si tiene baches (raro pero por si acaso)
-        // O si es la PRÓXIMA fila summary disponible (para ofrecer crear)
-        bloques_.push({
-          fila_summary: filaSum,
-          codigo_nanolote: codigo,
-          baches: baches_bloque,
-          excelso_kg: summary_row[12] || '',
-          filas_disponibles: filas_disp,
-        })
+        // Saltar fila "Observaciones"
+        if (colA.toLowerCase() === 'observaciones') continue
+
+        // Bache (col B con texto que parece batch)
+        if (colB && !colB.startsWith('#') && colB !== 'Batch' && bloqueActual) {
+          bloqueActual.baches.push({
+            fila: filaReal,
+            batch: colB,
+            variedad: r[2] || '',
+            proceso: r[3] || '',
+            sca: r[13] || '',
+          })
+          bachesAsignados.add(colB)
+          continue
+        }
+
+        // Fila vacía dentro del bloque actual (disponible para asignar bache)
+        if (!colB && bloqueActual) {
+          bloqueActual.filas_disponibles.push(filaReal)
+        }
       }
+      if (bloqueActual) bloques_.push(bloqueActual)
 
       // Baches aprobados en AS (col T = APROBADO, primer puntaje col F debe estar lleno)
       const aprobados_: BacheAprobado[] = as_rows

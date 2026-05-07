@@ -76,20 +76,22 @@ export function registrarEvento(input: {
 }
 
 function rolesParaTipo(tipo: EventoTipo): string[] {
+  // Regla LP&ET: Sergio e Ismelda son INTERCAMBIABLES en AF y AS — tienen
+  // los mismos protocolos y permisos. Todas las alertas de AF/AS van a ambos.
   switch (tipo) {
     case 'estado_cambiado':
     case 'estado_revertido':
-      return ['sergio', 'ismelda']  // ambos deben saber que entró/salió de la cola
+      return ['calidad', 'sergio', 'ismelda']
     case 'af_guardado':
-      return ['ismelda']            // ya puede catar
+      return ['calidad', 'sergio', 'ismelda']  // ambos pueden catar después
     case 'as_aprobado':
     case 'as_rechazado':
-      return ['john', 'felipe']     // John combina, Felipe se entera de aprobaciones
+      return ['calidad', 'sergio', 'ismelda', 'john', 'felipe']
     case 'as_guardado':
-      return ['ismelda']            // confirmación a la propia catadora
+      return ['calidad', 'sergio', 'ismelda']
     case 'venta_parcial':
     case 'venta_total':
-      return ['comercial', 'felipe', 'sergio']  // venta confirmada al equipo
+      return ['comercial', 'felipe', 'calidad', 'sergio', 'ismelda']
     default:
       return []
   }

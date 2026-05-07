@@ -10,13 +10,20 @@ interface Props {
   children: ReactNode
 }
 
-const NAV_ITEMS = [
+interface NavItem {
+  path: string
+  label: string
+  icon: typeof LayoutDashboard
+  disabled?: boolean
+}
+
+const NAV_ITEMS: NavItem[] = [
   { path: '/', label: 'Resumen', icon: LayoutDashboard },
   { path: '/baches', label: 'Baches', icon: Package },
   { path: '/analisis/fisico', label: 'Análisis físico', icon: Beaker },
   { path: '/analisis/sensorial', label: 'Análisis sensorial', icon: FlaskConical },
   { path: '/nanolotes', label: 'Nanolotes', icon: Coffee },
-  { path: '/ventas', label: 'Ventas', icon: ShoppingBag, disabled: true },
+  { path: '/ventas', label: 'Ventas', icon: ShoppingBag },
 ]
 
 export default function AppShell({ user, onLogout, children }: Props) {

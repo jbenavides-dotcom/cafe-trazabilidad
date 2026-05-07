@@ -12,6 +12,8 @@ export type EventoTipo =
   | 'as_aprobado'          // Bache aprobado en cata
   | 'as_rechazado'         // Bache rechazado en cata
   | 'estado_revertido'     // Devuelto de "Entregado" a "En Proceso"
+  | 'venta_parcial'        // Despacho parcial de nanolote (queda saldo en OfferingList)
+  | 'venta_total'          // Despacho total de nanolote (fila eliminada de OfferingList)
 
 export interface Evento {
   tipo: EventoTipo
@@ -85,6 +87,9 @@ function rolesParaTipo(tipo: EventoTipo): string[] {
       return ['john', 'felipe']     // John combina, Felipe se entera de aprobaciones
     case 'as_guardado':
       return ['ismelda']            // confirmación a la propia catadora
+    case 'venta_parcial':
+    case 'venta_total':
+      return ['comercial', 'felipe', 'sergio']  // venta confirmada al equipo
     default:
       return []
   }
@@ -129,5 +134,7 @@ export function etiquetaTipo(tipo: EventoTipo): string {
     case 'as_guardado':      return 'Análisis sensorial guardado'
     case 'as_aprobado':      return 'Bache APROBADO'
     case 'as_rechazado':     return 'Bache RECHAZADO'
+    case 'venta_parcial':    return 'Venta parcial'
+    case 'venta_total':      return 'Venta total (despacho completo)'
   }
 }

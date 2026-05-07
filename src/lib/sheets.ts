@@ -93,3 +93,41 @@ export async function batchGet(
   })
   return out
 }
+
+/** Devuelve el sheetId numérico de una pestaña por su título.
+ *  Necesario para batchUpdate (deleteDimension, etc.) */
+export async function getSheetIdByTitle(
+  spreadsheetId: string,
+  title: string,
+): Promise<number> {
+  const data = await request<{
+    sheets: Array<{ properties: { sheetId: number; title: string } }>
+  }>(`/${spreadsheetId}?fields=sheets.properties`)
+  const sheet = data.sheets?.find(s => s.properties.title === title)
+  if (!sheet) throw new SheetsError(`Pestaña "${title}" no encontrada`)
+  return sheet.properties.sheetId
+}
+
+/** Borra una fila específica de una pestaña (1-indexed igual que el UI del Sheet) */
+export async function deleteRow(
+  spreadsheetId: string,
+  sheetTitle: string,
+  rowNumber: number,
+): Promise<void> {
+  const sheetId = await getSheetIdByTitle(spreadsheetId, sheetTitle)
+  await request(`/${spreadsheetId}:batchUpdate`, {
+    method: 'POST',
+    body: JSON.stringify({
+      requests: [{
+        deleteDimension: {
+          range: {
+            sheetId,
+            dimension: 'ROWS',
+            startIndex: rowNumber - 1,  // API es 0-indexed
+            endIndex: rowNumber,
+          },
+        },
+      }],
+    }),
+  })
+}

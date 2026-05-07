@@ -1,7 +1,7 @@
 // Tipos del dominio café trazabilidad — alineados con el flujo en Sheets 2026
 // Documentación completa: memory/project_cafe-trazabilidad-flujo-refinado-6may.md
 
-import { readRange, writeRange, SHEET_2026_ID } from './sheets'
+import { readRange, writeRange, deleteRow, SHEET_2026_ID, OFFERINGLIST_ID } from './sheets'
 
 export type Proceso = 'Natural' | 'Lactico' | 'Bio Washed' | 'Bio Natural' | 'pH Clarity'
 
@@ -235,6 +235,78 @@ export async function cambiarEstadoBache(
   const row = idx + 5
   await writeRange(SHEET_2026_ID, `CFF!L${row}`, [[nuevo_estado]])
   return row
+}
+
+// ─── Despacho de nanolotes (T7 ventas) ───
+
+export interface DespachoResult {
+  tipo: 'parcial' | 'total'
+  fila_offeringlist: number
+  kg_vendidos: number
+  kg_disponibles_antes: number
+  kg_disponibles_despues: number
+  ms_total: number
+  recordar_seguimiento: boolean
+}
+
+/**
+ * Despacho de un nanolote desde OfferingList.
+ *
+ * - Si kg_vendidos = kg_disponibles → DESPACHO TOTAL: borra la fila de OL.
+ * - Si kg_vendidos < kg_disponibles → DESPACHO PARCIAL: incrementa K (Total salidas).
+ *   La fórmula L=J-K e I=IF(L=0,...) recalculan solas.
+ *
+ * NO toca Seguimiento .xlsx (la API de Sheets no edita Office files).
+ * El equipo debe actualizar Seguimiento manualmente — la pantalla muestra recordatorio.
+ *
+ * @param codigo_nanolote ej. "PTNLG26001"
+ * @param kg_vendidos kg que sale al cliente
+ */
+export async function despacharNanolote(
+  codigo_nanolote: string,
+  kg_vendidos: number,
+): Promise<DespachoResult> {
+  if (kg_vendidos <= 0) throw new Error('kg_vendidos debe ser > 0')
+
+  const t0 = performance.now()
+
+  // 1. Buscar fila del nanolote en OfferingList!PT (datos desde R5)
+  const rows = await readRange(OFFERINGLIST_ID, 'PT!A4:L100')
+  // Header en R4 — buscar desde R5 (índice 1)
+  const idx = rows.slice(1).findIndex(r => (r[2] || '').trim() === codigo_nanolote)
+  if (idx < 0) throw new Error(`Nanolote ${codigo_nanolote} no está en OfferingList`)
+
+  const fila = idx + 5  // +1 por header en R4 + offset de slice + 1 (1-indexed)
+  const row = rows[idx + 1]
+
+  const total_excelso = parseFloat((row[9] || '0').replace(',', '.'))     // J
+  const salidas_actuales = parseFloat((row[10] || '0').replace(',', '.')) // K
+  const kg_disp = total_excelso - salidas_actuales                       // L=J-K
+
+  if (kg_vendidos > kg_disp + 0.01) {
+    throw new Error(`Solo hay ${kg_disp} kg disponibles, se intentó vender ${kg_vendidos}`)
+  }
+
+  const es_total = Math.abs(kg_vendidos - kg_disp) < 0.01
+
+  if (es_total) {
+    // DESPACHO TOTAL → borrar fila completa
+    await deleteRow(OFFERINGLIST_ID, 'PT', fila)
+  } else {
+    // DESPACHO PARCIAL → incrementar K (Total salidas)
+    const nuevas_salidas = Number((salidas_actuales + kg_vendidos).toFixed(2))
+    await writeRange(OFFERINGLIST_ID, `PT!K${fila}`, [[nuevas_salidas]])
+  }
+
+  return {
+    tipo: es_total ? 'total' : 'parcial',
+    fila_offeringlist: fila,
+    kg_vendidos,
+    kg_disponibles_antes: kg_disp,
+    kg_disponibles_despues: es_total ? 0 : kg_disp - kg_vendidos,
+    ms_total: performance.now() - t0,
+    recordar_seguimiento: true,
+  }
 }
 
 /**

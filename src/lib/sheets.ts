@@ -131,3 +131,62 @@ export async function deleteRow(
     }),
   })
 }
+
+/** Verifica si una pestaña existe */
+export async function sheetExists(
+  spreadsheetId: string,
+  title: string,
+): Promise<boolean> {
+  try {
+    await getSheetIdByTitle(spreadsheetId, title)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Crea una pestaña nueva con headers iniciales.
+ * NO toca ninguna otra pestaña existente — solo agrega.
+ */
+export async function createSheetWithHeaders(
+  spreadsheetId: string,
+  title: string,
+  headers: string[],
+  rowCount = 200,
+): Promise<number> {
+  // 1. addSheet
+  const addResp = await request<{
+    replies: Array<{ addSheet: { properties: { sheetId: number } } }>
+  }>(`/${spreadsheetId}:batchUpdate`, {
+    method: 'POST',
+    body: JSON.stringify({
+      requests: [{
+        addSheet: {
+          properties: {
+            title,
+            gridProperties: { rowCount, columnCount: Math.max(headers.length, 20) },
+          },
+        },
+      }],
+    }),
+  })
+  const sheetId = addResp.replies[0].addSheet.properties.sheetId
+
+  // 2. Escribir headers en R1
+  if (headers.length > 0) {
+    await writeRange(spreadsheetId, `${title}!A1:${columnLetter(headers.length)}1`, [headers])
+  }
+  return sheetId
+}
+
+/** Convierte un índice de columna 1-based a letra (1→A, 2→B, 27→AA, ...) */
+export function columnLetter(idx: number): string {
+  let s = ''
+  while (idx > 0) {
+    const m = (idx - 1) % 26
+    s = String.fromCharCode(65 + m) + s
+    idx = Math.floor((idx - 1) / 26)
+  }
+  return s
+}

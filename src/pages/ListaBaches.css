@@ -69,9 +69,9 @@
 }
 .filter-chip:hover { background: var(--color-gray-light); }
 .filter-chip.active {
-  background: var(--color-navy);
+  background: var(--color-brand-red);
   color: var(--color-white);
-  border-color: var(--color-navy);
+  border-color: var(--color-brand-red);
 }
 
 .lista-loading {
@@ -106,7 +106,7 @@
   align-items: center;
   gap: 0.35rem;
   padding: 0.4rem 0.7rem;
-  background: var(--color-navy);
+  background: var(--color-brand-red);
   color: var(--color-white);
   border: none;
   border-radius: var(--radius-sm);
@@ -117,7 +117,7 @@
   transition: all 0.15s;
 }
 .btn-entregar:hover:not(:disabled) {
-  background: var(--color-tan);
+  background: #a30040;
 }
 .btn-entregar:disabled {
   opacity: 0.6;

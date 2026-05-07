@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Package, FlaskConical, Coffee, ShoppingBag, LogOut, Menu, X, Beaker } from 'lucide-react'
+import { LayoutDashboard, Package, FlaskConical, Coffee, ShoppingBag, LogOut, Menu, X, Beaker, Sparkles } from 'lucide-react'
 import { logout, type AuthUser } from '../lib/auth'
 import './AppShell.css'
 
@@ -23,6 +23,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/analisis/fisico', label: 'Análisis físico', icon: Beaker },
   { path: '/analisis/sensorial', label: 'Análisis sensorial', icon: FlaskConical },
   { path: '/nanolotes', label: 'Nanolotes', icon: Coffee },
+  { path: '/craftlab', label: 'CraftLab', icon: Sparkles },
   { path: '/ventas', label: 'Ventas', icon: ShoppingBag },
 ]
 

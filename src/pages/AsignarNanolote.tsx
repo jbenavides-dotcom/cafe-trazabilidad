@@ -87,10 +87,10 @@ export default function AsignarNanolote() {
           continue
         }
 
-        // Saltar fila "Observaciones"
-        if (colA.toLowerCase() === 'observaciones') continue
-
-        // Bache (col B con texto que parece batch)
+        // Bache (col B con texto que parece batch).
+        // OJO: la fila puede tener col A == 'Observaciones' Y col B con batch a la vez
+        // (es como Felipe dejó el sheet). Por eso NO saltamos por colA, solo
+        // revisamos col B para detectar baches.
         if (colB && !colB.startsWith('#') && colB !== 'Batch' && bloqueActual) {
           bloqueActual.baches.push({
             fila: filaReal,
@@ -103,8 +103,9 @@ export default function AsignarNanolote() {
           continue
         }
 
-        // Fila vacía dentro del bloque actual (disponible para asignar bache)
-        if (!colB && bloqueActual) {
+        // Fila vacía dentro del bloque actual (disponible para asignar bache).
+        // Excluye fila marcada como "Observaciones" si no tiene batch
+        if (!colB && bloqueActual && colA.toLowerCase() !== 'observaciones') {
           bloqueActual.filas_disponibles.push(filaReal)
         }
       }

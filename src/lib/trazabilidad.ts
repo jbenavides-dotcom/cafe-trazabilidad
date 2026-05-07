@@ -1,7 +1,10 @@
 // Tipos del dominio café trazabilidad — alineados con el flujo en Sheets 2026
 // Documentación completa: memory/project_cafe-trazabilidad-flujo-refinado-6may.md
 
-import { readRange, writeRange, deleteRow, SHEET_2026_ID, OFFERINGLIST_ID } from './sheets'
+import {
+  readRange, writeRange, deleteRow,
+  SHEET_2026_ID, OFFERINGLIST_ID,
+} from './sheets'
 
 export type Proceso = 'Natural' | 'Lactico' | 'Bio Washed' | 'Bio Natural' | 'pH Clarity'
 

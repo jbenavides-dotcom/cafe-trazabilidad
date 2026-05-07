@@ -92,9 +92,13 @@
 .bloques-header small { color: var(--color-gray-medium); font-style: italic; }
 
 .bloque-card {
-  padding: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
   background: var(--color-white);
+  margin-bottom: var(--spacing-md);
+  border-left: 3px solid var(--color-tan);
+  transition: border-left-color 0.2s;
 }
+.bloque-card:hover { border-left-color: var(--color-state-aprobado); }
 
 .bloque-summary {
   display: flex;

@@ -76,11 +76,14 @@ export default function AnalisisFisico() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Sumatoria mallas (debería dar ~100)
+  // Sumatoria mallas en gramos (debería igualar el peso de muestra)
   const totalMallas = useMemo(
     () => Object.values(mallas).reduce((a, b) => a + b, 0),
     [mallas],
   )
+  const muestraEsperada = pesos.muestra_g || 0
+  const mallasOK = muestraEsperada > 0 && Math.abs(totalMallas - muestraEsperada) < 0.5
+  const sliderMax = Math.max(200, Math.ceil(muestraEsperada * 1.2))
 
   useEffect(() => {
     if (!batch) return
@@ -240,11 +243,15 @@ export default function AnalisisFisico() {
             {proceso && <> · {proceso}</>}
           </p>
         </div>
-        <div className={`mallas-display ${Math.abs(totalMallas - 100) < 0.5 ? 'ok' : ''}`}>
-          <div className="mallas-value">{totalMallas.toFixed(1)}%</div>
+        <div className={`mallas-display ${mallasOK ? 'ok' : ''}`}>
+          <div className="mallas-value">{totalMallas.toFixed(1)} g</div>
           <div className="mallas-label">Σ mallas</div>
           <div className="mallas-hint">
-            {Math.abs(totalMallas - 100) < 0.5 ? '✓ balanceado' : 'debe sumar 100'}
+            {muestraEsperada === 0
+              ? 'ingresa muestra (g) primero'
+              : mallasOK
+              ? `✓ coincide con muestra (${muestraEsperada} g)`
+              : `debe sumar ${muestraEsperada} g (muestra)`}
           </div>
         </div>
       </div>
@@ -336,7 +343,7 @@ export default function AnalisisFisico() {
         </section>
 
         <section className="card">
-          <h2>Mallas (criba) <span className="card-hint">% retenido en cada tamiz</span></h2>
+          <h2>Mallas (criba) <span className="card-hint">gramos retenidos en cada tamiz · Σ debe coincidir con el peso de muestra</span></h2>
           <div className="mallas-grid">
             {MALLAS.map(m => (
               <div key={m.key} className="malla-card">
@@ -344,13 +351,13 @@ export default function AnalisisFisico() {
                 <div className="malla-input-row">
                   <input
                     type="range"
-                    min={0} max={100} step={0.5}
-                    value={mallas[m.key]}
+                    min={0} max={sliderMax} step={0.5}
+                    value={Math.min(mallas[m.key], sliderMax)}
                     onChange={e => setMalla(m.key, parseFloat(e.target.value))}
                     className="malla-slider"
                   />
                   <input
-                    type="number" step={0.1} min={0} max={100}
+                    type="number" step={0.1} min={0}
                     value={mallas[m.key]}
                     onChange={e => setMalla(m.key, parseFloat(e.target.value) || 0)}
                     className="malla-number"

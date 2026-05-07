@@ -97,21 +97,17 @@
 }
 
 .bloque-summary {
-  display: grid;
-  grid-template-columns: 60px 1fr auto;
-  gap: var(--spacing-md);
+  display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
   padding-bottom: var(--spacing-md);
   border-bottom: 1px solid var(--color-gray-light);
   margin-bottom: var(--spacing-md);
 }
-.bloque-num {
-  font-family: var(--font-serif);
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-tan);
-  text-align: center;
-}
+.bloque-summary > .bloque-codigo { flex: 0 0 auto; }
+.bloque-summary > .bloque-stats { flex: 1 1 auto; justify-content: flex-end; }
+.bloque-summary > .btn { flex: 0 0 auto; }
 
 .bloque-codigo {
   display: flex;
@@ -157,22 +153,20 @@
 .bloque-stats {
   display: flex;
   gap: var(--spacing-md);
-  text-align: right;
-}
-.bloque-stats > div {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
   color: var(--color-gray-medium);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
-.bloque-stats > div strong {
+.bloque-stats span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+.bloque-stats strong {
   font-family: var(--font-serif);
-  font-size: 1.5rem;
+  font-size: 1.05rem;
   color: var(--color-navy);
-  text-transform: none;
-  letter-spacing: normal;
+  font-weight: 600;
 }
 
 /* ─── Baches dentro del bloque ─── */
@@ -183,7 +177,7 @@
 }
 .bloque-bache {
   display: grid;
-  grid-template-columns: 90px 1fr 80px 80px;
+  grid-template-columns: 90px 1fr 90px;
   gap: var(--spacing-sm);
   padding: 0.5rem 0.75rem;
   background: var(--color-gray-light);
@@ -309,12 +303,9 @@
 }
 
 @media (max-width: 600px) {
-  .bloque-summary { grid-template-columns: 1fr; gap: 0.5rem; }
-  .bloque-stats { justify-content: space-between; }
-  .pendiente-row { grid-template-columns: 1fr 1fr; gap: 0.4rem; font-size: 0.8rem; }
-  .pendiente-row > :nth-child(n+5) { display: none; }
-  .bloque-bache { grid-template-columns: 80px 1fr; }
-  .bloque-bache > :nth-child(n+3) { display: none; }
+  .bloque-summary { gap: 0.6rem; }
+  .bloque-stats { justify-content: flex-start; flex: 1 1 100%; }
+  .bloque-bache { grid-template-columns: 80px 1fr 60px; font-size: 0.78rem; }
   .asig-actions { width: 100%; }
   .asig-actions .btn { flex: 1; }
 }

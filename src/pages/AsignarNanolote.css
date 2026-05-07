@@ -2,7 +2,14 @@
 
 .asig-loading { display: flex; justify-content: center; padding: 4rem; }
 
-.asig-header { margin-bottom: var(--spacing-lg); }
+.asig-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+}
 .asig-header h1 {
   font-family: var(--font-serif);
   font-size: 2rem;
@@ -10,6 +17,8 @@
   margin-bottom: var(--spacing-xs);
 }
 .asig-subtitle { color: var(--color-gray-medium); font-style: italic; }
+.asig-actions { display: flex; gap: var(--spacing-sm); align-items: center; }
+.btn-sm { padding: 0.4rem 0.75rem; font-size: 0.85rem; }
 
 .asig-info {
   display: flex;
@@ -213,6 +222,92 @@
   color: var(--color-navy);
 }
 
+/* ─── Modales (compartidos con Ventas) ─── */
+.asig-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+.asig-form input[type="text"] {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+}
+.asig-modal-hint {
+  font-size: 0.85rem;
+  color: var(--color-gray-medium);
+  font-style: italic;
+  margin-bottom: var(--spacing-md);
+}
+.asig-modal-hint code {
+  background: var(--color-gray-light);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  color: var(--color-tan);
+  font-size: 0.85em;
+}
+.codigo-preview {
+  font-size: 0.85rem;
+  min-height: 1.2rem;
+}
+.codigo-preview .ok { color: var(--color-state-aprobado); font-weight: 500; }
+.codigo-preview .invalid { color: var(--color-brand-red); }
+
+/* Lista de aprobados disponibles */
+.aprobados-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: var(--spacing-md);
+}
+.aprobado-row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  gap: var(--spacing-sm);
+  align-items: center;
+  padding: 0.6rem 0.8rem;
+  background: var(--color-gray-light);
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.aprobado-row:hover { border-color: var(--color-tan); }
+.aprobado-row.sel {
+  border-color: var(--color-state-aprobado);
+  background: rgba(45, 106, 79, 0.08);
+}
+.aprobado-info { display: flex; flex-direction: column; }
+.aprobado-info strong { color: var(--color-navy); font-family: var(--font-serif); }
+.aprobado-info small { color: var(--color-gray-medium); font-style: italic; }
+.aprobado-sca {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  color: var(--color-tan);
+  font-size: 0.95rem;
+}
+
+.asig-empty-aprobados {
+  text-align: center;
+  padding: var(--spacing-md);
+  color: var(--color-gray-medium);
+  font-style: italic;
+  background: var(--color-gray-light);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.asig-warning {
+  background: rgba(255, 213, 79, 0.18);
+  border-left: 3px solid #FFD54F;
+  padding: var(--spacing-md);
+  font-size: 0.9rem;
+  color: var(--color-navy);
+}
+
 @media (max-width: 600px) {
   .bloque-summary { grid-template-columns: 1fr; gap: 0.5rem; }
   .bloque-stats { justify-content: space-between; }
@@ -220,4 +315,6 @@
   .pendiente-row > :nth-child(n+5) { display: none; }
   .bloque-bache { grid-template-columns: 80px 1fr; }
   .bloque-bache > :nth-child(n+3) { display: none; }
+  .asig-actions { width: 100%; }
+  .asig-actions .btn { flex: 1; }
 }

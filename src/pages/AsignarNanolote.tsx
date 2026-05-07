@@ -53,7 +53,9 @@ export default function AsignarNanolote() {
       const bloques_: Bloque[] = []
       const bachesAsignados = new Set<string>()
 
-      for (const filaSum of MXV_SUMMARY_ROWS) {
+      for (let i = 0; i < MXV_SUMMARY_ROWS.length; i++) {
+        const filaSum = MXV_SUMMARY_ROWS[i]
+        const filaSumNext = MXV_SUMMARY_ROWS[i + 1] ?? filaSum + 8
         const idx = filaSum - HEADER_ROW
         if (idx < 0 || idx >= mxv.length) continue
         const summary_row = mxv[idx]
@@ -61,16 +63,20 @@ export default function AsignarNanolote() {
 
         const baches_bloque: Bloque['baches'] = []
         const filas_disp: number[] = []
-        // Baches del bloque: filas (filaSum + 2) a (filaSum + 7), 6 filas posibles
-        for (let off = 2; off <= 7; off++) {
-          const filaBache = filaSum + off
-          const idxB = filaBache - HEADER_ROW
+        // Baches del bloque: TODAS las filas entre la summary y la siguiente summary,
+        // detectados por col B (Batch). Si col B vacía → fila disponible.
+        // Excluimos la fila summary misma y la fila "Observaciones" (col A == "Observaciones")
+        for (let f = filaSum + 1; f < filaSumNext; f++) {
+          const idxB = f - HEADER_ROW
           if (idxB >= mxv.length) break
           const r = mxv[idxB]
+          const colA = (r[0] || '').trim()
           const batch = (r[1] || '').trim()
+          // Saltar fila explícita "Observaciones" (si existe)
+          if (colA.toLowerCase() === 'observaciones') continue
           if (batch && !batch.startsWith('#') && batch !== 'Batch') {
             baches_bloque.push({
-              fila: filaBache,
+              fila: f,
               batch,
               variedad: r[2] || '',
               proceso: r[3] || '',
@@ -78,7 +84,7 @@ export default function AsignarNanolote() {
             })
             bachesAsignados.add(batch)
           } else {
-            filas_disp.push(filaBache)
+            filas_disp.push(f)
           }
         }
 
@@ -263,7 +269,7 @@ function BloqueCard({
           <strong>{bloque.codigo_nanolote}</strong>
         </div>
         <div className="bloque-stats">
-          <span><strong>{bloque.baches.length}</strong> / 6 baches</span>
+          <span><strong>{bloque.baches.length}</strong> baches</span>
           {bloque.excelso_kg && <span><strong>{bloque.excelso_kg}</strong> kg almendra</span>}
         </div>
         <button
@@ -271,7 +277,7 @@ function BloqueCard({
           onClick={onAgregarBache}
           disabled={lleno || aprobadosDisponibles === 0}
           title={
-            lleno ? 'Bloque lleno (6 baches)' :
+            lleno ? 'Bloque lleno (no quedan filas disponibles)' :
             aprobadosDisponibles === 0 ? 'No hay baches APROBADOS sin asignar' :
             'Asignar un bache aprobado a este nanolote'
           }

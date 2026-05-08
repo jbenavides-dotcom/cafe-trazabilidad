@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Package, FlaskConical, Coffee, ShoppingBag, LogOut, Menu, X, Beaker, FileText, ClipboardList } from 'lucide-react'
+import { LayoutDashboard, Package, FlaskConical, Coffee, ShoppingBag, LogOut, Menu, X, Beaker, FileText, ClipboardList, Sparkles } from 'lucide-react'
 import { logout, type AuthUser } from '../lib/auth'
 import './AppShell.css'
 
@@ -26,6 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/pedidos-craftlab', label: 'Pedidos CraftLab', icon: ClipboardList },
   { path: '/ventas', label: 'Ventas', icon: ShoppingBag },
   { path: '/fichas', label: 'Fichas técnicas', icon: FileText },
+  { path: '/craftlab-flow/welcome', label: 'CraftLab Demo', icon: Sparkles },
 ]
 
 export default function AppShell({ user, onLogout, children }: Props) {

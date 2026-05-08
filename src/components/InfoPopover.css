@@ -1,0 +1,191 @@
+/* ===================================================
+   INFO POPOVER — reutilizable en CraftLab y FB
+   Desktop: popover inline con flecha
+   Mobile (<640px): bottom sheet modal
+   =================================================== */
+
+/* ---- WRAPPER (inline en el flujo del texto) -------- */
+.info-popover-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    margin-left: 6px;
+}
+
+/* ---- TRIGGER BUTTON ("?" circular) ----------------- */
+.info-popover-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: background 0.15s, opacity 0.15s;
+    flex-shrink: 0;
+}
+
+.info-popover-trigger:hover {
+    opacity: 0.8;
+}
+
+.info-popover-trigger:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+
+/* Variant colors */
+.info-popover-trigger--craftlab {
+    color: #1E3A5F;
+}
+
+.info-popover-trigger--forwardbooking {
+    color: #B8895C;
+}
+
+/* ---- INLINE WRAPPER (container for positioning) ---- */
+.info-popover-inline-wrapper {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    width: 280px;
+    max-width: calc(100vw - 2rem);
+}
+
+/* ---- CONTENT BOX ----------------------------------- */
+.info-popover-content {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 14px 16px 16px;
+}
+
+/* Open animation (desktop) */
+.info-popover-content--inline {
+    animation: ipop-fade-in 0.2s ease-out;
+}
+
+@keyframes ipop-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ---- ARROW (desktop only) -------------------------- */
+.info-popover-arrow {
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 10px;
+    height: 10px;
+    background: #fff;
+    box-shadow: -2px -2px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* ---- HEADER ---------------------------------------- */
+.info-popover-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.info-popover-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #0A1E3F;
+    line-height: 1.3;
+}
+
+.info-popover-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+    color: #333;
+    transition: background 0.15s;
+}
+
+.info-popover-close:hover {
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.info-popover-close:focus-visible {
+    outline: 2px solid #1E3A5F;
+    outline-offset: 2px;
+}
+
+/* ---- BODY ------------------------------------------ */
+.info-popover-body {
+    font-size: 0.82rem;
+    color: #4A4A4A;
+    line-height: 1.55;
+}
+
+/* ============================================================
+   MOBILE BOTTOM SHEET (<640px)
+   ============================================================ */
+
+/* Backdrop */
+.info-popover-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 299;
+    animation: ipop-backdrop-in 0.2s ease-out;
+}
+
+@keyframes ipop-backdrop-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Sheet itself */
+.info-popover-content--sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 300;
+    border-radius: 18px 18px 0 0;
+    padding: 12px 20px 32px;
+    width: 100%;
+    animation: ipop-sheet-in 0.25s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+@keyframes ipop-sheet-in {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+/* Drag handle */
+.info-popover-handle {
+    width: 40px;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 99px;
+    margin: 0 auto 14px;
+}

@@ -15,6 +15,12 @@ import CraftLab from './pages/CraftLab'
 import PedidosCraftLab from './pages/PedidosCraftLab'
 import AppShell from './components/AppShell'
 import { getStoredUser, type AuthUser } from './lib/auth'
+import { CraftLabWelcome } from './pages/craftlab-flow/CraftLabWelcome'
+import { CraftLabOnboarding } from './pages/craftlab-flow/CraftLabOnboarding'
+import { CraftLabBasicEducation } from './pages/craftlab-flow/CraftLabBasicEducation'
+import { CraftLabTechEducation } from './pages/craftlab-flow/CraftLabTechEducation'
+import { CraftLabQuiz } from './pages/craftlab-flow/CraftLabQuiz'
+import { CraftLabConfigurator } from './pages/craftlab-flow/CraftLabConfigurator'
 
 export default function App() {
   const [user, setUser] = useState<AuthUser | null>(getStoredUser())
@@ -49,6 +55,12 @@ export default function App() {
         <Route path="/fichas" element={<Fichas />} />
         <Route path="/craftlab" element={<CraftLab />} />
         <Route path="/pedidos-craftlab" element={<PedidosCraftLab />} />
+        <Route path="/craftlab-flow/welcome" element={<CraftLabWelcome />} />
+        <Route path="/craftlab-flow/onboarding" element={<CraftLabOnboarding />} />
+        <Route path="/craftlab-flow/basic-education" element={<CraftLabBasicEducation />} />
+        <Route path="/craftlab-flow/tech-education" element={<CraftLabTechEducation />} />
+        <Route path="/craftlab-flow/quiz" element={<CraftLabQuiz />} />
+        <Route path="/craftlab-flow/configurator" element={<CraftLabConfigurator />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

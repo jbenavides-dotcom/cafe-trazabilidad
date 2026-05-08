@@ -1,0 +1,117 @@
+/* ExitConfirmModal.css */
+
+.exit-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+    animation: overlayFadeIn 0.3s ease-out forwards;
+}
+
+@keyframes overlayFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.exit-modal-box {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 32px 28px 24px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    animation: modalScaleIn 0.3s ease-out forwards;
+    outline: none;
+}
+
+@keyframes modalScaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+.exit-modal-title {
+    font-family: var(--font-serif, Georgia, serif);
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 12px;
+    line-height: 1.3;
+}
+
+.exit-modal-message {
+    font-family: var(--font-sans, system-ui, sans-serif);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: #4a4a4a;
+    margin: 0 0 28px;
+}
+
+.exit-modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Confirm button — default craftlab variant */
+.exit-modal-btn-confirm {
+    width: 100%;
+    padding: 13px 20px;
+    border: none;
+    border-radius: 10px;
+    font-family: var(--font-sans, system-ui, sans-serif);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.15s ease;
+    color: #ffffff;
+}
+
+.exit-modal-btn-confirm:hover {
+    opacity: 0.88;
+    transform: translateY(-1px);
+}
+
+.exit-modal-btn-confirm:active {
+    transform: translateY(0);
+}
+
+/* craftlab variant: navy */
+.exit-modal-btn-confirm.variant-craftlab {
+    background-color: #0E1A3A;
+}
+
+/* forwardbooking variant: ocre tierra */
+.exit-modal-btn-confirm.variant-forwardbooking {
+    background-color: #8B6F47;
+}
+
+/* Cancel button — outline style */
+.exit-modal-btn-cancel {
+    width: 100%;
+    padding: 13px 20px;
+    border: 1.5px solid #c8c8c8;
+    border-radius: 10px;
+    background: transparent;
+    font-family: var(--font-sans, system-ui, sans-serif);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #2c2c2c;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.exit-modal-btn-cancel:hover {
+    border-color: #888;
+    background-color: #f5f5f5;
+}
+
+/* Focus visible for accessibility */
+.exit-modal-btn-confirm:focus-visible,
+.exit-modal-btn-cancel:focus-visible {
+    outline: 3px solid #E85A7A;
+    outline-offset: 2px;
+}

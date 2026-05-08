@@ -31,6 +31,8 @@ jobs:
       - name: Build
         env:
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_N8N_WEBHOOK_NANOLOTE: ${{ vars.VITE_N8N_WEBHOOK_NANOLOTE }}
           VITE_N8N_WEBHOOK_EVENTOS: ${{ vars.VITE_N8N_WEBHOOK_EVENTOS }}
         run: npm run build

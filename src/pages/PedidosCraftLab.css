@@ -581,24 +581,16 @@
 .pcl-btn--primary:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ─── Tanques ─── */
-.pcl-tanques-list {
-  width: 100%;
-  margin: 8px 0;
-}
-.pcl-tanques-list summary {
-  font-size: 0.78rem;
-  color: var(--color-ink-60, #4a5362);
-  cursor: pointer;
-  padding: 4px 0;
-  user-select: none;
-}
-.pcl-tanques-list summary:hover { color: var(--color-navy); }
-
 .pcl-tanques-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 8px;
+  margin-top: 4px;
+}
+
+/* Variante abierta (sin <details>) */
+.pcl-tanques-grid--open {
+  margin-top: 0;
 }
 
 .pcl-tanque-chip {
@@ -623,17 +615,185 @@
   color: var(--color-ink-40, #858d9a);
   text-transform: capitalize;
 }
-.pcl-tanque-chip:hover { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
-.pcl-tanque-chip:hover small { color: rgba(255,255,255,0.7); }
+.pcl-tanque-chip:hover:not(:disabled) { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+.pcl-tanque-chip:hover:not(:disabled) small { color: rgba(255,255,255,0.7); }
+
+.pcl-tanque-chip--active {
+  background: var(--color-navy);
+  color: #fff;
+  border-color: var(--color-navy);
+}
+.pcl-tanque-chip--active small { color: rgba(255,255,255,0.6); }
+
 .pcl-tanque-chip--busy {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
-.pcl-tanque-chip--busy:hover {
-  background: #f9fafb;
-  color: var(--color-navy);
-  border-color: #e5e7eb;
+.pcl-tanque-chip--sm {
+  font-size: 0.68rem;
+  padding: 2px 8px;
+  margin-left: 8px;
+  vertical-align: middle;
 }
+
+/* ─── Sección Cómo va el proceso ─── */
+.pcl-proceso-block {
+  margin-bottom: 20px;
+}
+.pcl-proceso-block:last-child { margin-bottom: 0; }
+
+.pcl-proceso-block-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-60, #4a5362);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.pcl-status-history {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pcl-hint--inline {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-ink-40, #858d9a);
+  font-style: italic;
+}
+
+.pcl-proceso-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-ink-40, #858d9a);
+  font-size: 0.82rem;
+  padding: 14px 0 4px;
+}
+.pcl-proceso-empty svg { flex-shrink: 0; opacity: 0.6; }
+
+/* Last reading — 3 cards grandes */
+.pcl-last-reading {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.pcl-reading-card {
+  flex: 1;
+  min-width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 10px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+}
+.pcl-reading-card--ph   { background: #fdf0f9; border-color: #e8b3d8; color: #A8327E; }
+.pcl-reading-card--temp { background: #fef4ed; border-color: #e9c0a3; color: #C46A3C; }
+.pcl-reading-card--brix { background: #f4f5ec; border-color: #cdd0a8; color: #7D8456; }
+
+.pcl-reading-icon {
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+
+.pcl-reading-value {
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.pcl-reading-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.7;
+}
+
+/* Sparklines */
+.pcl-sparklines-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.pcl-sparkline-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 100px;
+}
+
+.pcl-sparkline-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.pcl-sparkline {
+  width: 100%;
+  height: 30px;
+  display: block;
+}
+
+.pcl-sparkline-range {
+  font-size: 0.65rem;
+  color: var(--color-ink-40, #858d9a);
+}
+
+/* Tabla lecturas */
+.pcl-readings-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+.pcl-readings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.pcl-readings-table thead tr {
+  background: #f9fafb;
+}
+
+.pcl-readings-table th {
+  padding: 7px 12px;
+  text-align: left;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-60, #4a5362);
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.pcl-readings-table td {
+  padding: 7px 12px;
+  color: var(--color-navy);
+  border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
+}
+
+.pcl-readings-table tbody tr:last-child td { border-bottom: none; }
+.pcl-readings-table tbody tr:hover { background: #fafafa; }
 
 /* ─── Formulario update ─── */
 .pcl-update-form {

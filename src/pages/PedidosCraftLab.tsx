@@ -25,6 +25,9 @@
  * create policy "order_updates_select_team" on public.order_updates
  *   for select using (true);
  *
+ * create policy "order_tank_assignments_team" on public.order_tank_assignments
+ *   for all using (true) with check (true);
+ *
  * Si no ejecutas este SQL, las listas se verán vacías pero la app no romperá.
  * ══════════════════════════════════════════════════════════════════════════════
  */
@@ -34,13 +37,15 @@ import {
   Package, Loader2, RefreshCw, X, ChevronDown,
   MessageSquarePlus, Truck, Beaker, Clock,
   CheckCircle2, AlertCircle, Send, Image,
+  Activity, ThermometerSun, Droplets,
 } from 'lucide-react'
 import {
   cargarTodosPedidos,
   cargarTodosLosTanques,
   cargarUpdates,
+  cargarReadings,
   actualizarStatus,
-  asignarLote,
+  asignarTanque,
   insertarUpdate,
   STATUS_LABELS,
   STATUS_ORDER,
@@ -48,6 +53,7 @@ import {
   type Tanque,
   type OrderUpdate,
   type OrderStatus,
+  type SensorReading,
 } from '../lib/pedidos-craftlab'
 import { getStoredUser } from '../lib/auth'
 import './PedidosCraftLab.css'
@@ -91,6 +97,35 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('es-CO', {
     day: '2-digit', month: 'short', year: 'numeric',
   })
+}
+
+function formatDateTime(iso: string): string {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleString('es-CO', {
+    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+  })
+}
+
+// ─── Sparkline SVG inline ─────────────────────────────────────────────────────
+
+function Sparkline({ values, color }: { values: number[]; color: string }) {
+  if (values.length < 2) return null
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const range = max - min || 1
+  const points = values
+    .map((v, i) => `${(i / (values.length - 1)) * 100},${30 - ((v - min) / range) * 28 - 1}`)
+    .join(' ')
+  return (
+    <svg
+      viewBox="0 0 100 30"
+      preserveAspectRatio="none"
+      className="pcl-sparkline"
+      aria-hidden="true"
+    >
+      <polyline points={points} fill="none" stroke={color} strokeWidth="1.5" />
+    </svg>
+  )
 }
 
 // ─── Componente principal ─────────────────────────────────────────────────────
@@ -346,7 +381,7 @@ export default function PedidosCraftLab() {
   )
 }
 
-// ─── Modal de detalle + 3 acciones ───────────────────────────────────────────
+// ─── Modal de detalle ─────────────────────────────────────────────────────────
 
 function DetallePedidoModal({
   pedido,
@@ -357,31 +392,41 @@ function DetallePedidoModal({
   onClose: () => void
   onUpdate: () => void
 }) {
-  const [tanques,  setTanques]  = useState<Tanque[]>([])
-  const [updates,  setUpdates]  = useState<OrderUpdate[]>([])
-  const [loadingT, setLoadingT] = useState(true)
-  const [loadingU, setLoadingU] = useState(true)
-  const [saving,   setSaving]   = useState(false)
-  const [error,    setError]    = useState<string | null>(null)
-  const [success,  setSuccess]  = useState<string | null>(null)
+  const [tanques,   setTanques]   = useState<Tanque[]>([])
+  const [updates,   setUpdates]   = useState<OrderUpdate[]>([])
+  const [readings,  setReadings]  = useState<SensorReading[]>([])
+  const [loadingT,  setLoadingT]  = useState(true)
+  const [loadingU,  setLoadingU]  = useState(true)
+  const [loadingR,  setLoadingR]  = useState(false)
+  const [saving,    setSaving]    = useState(false)
+  const [error,     setError]     = useState<string | null>(null)
+  const [success,   setSuccess]   = useState<string | null>(null)
 
-  // Form asignar tanque
-  const [tanqueSeleccionado, setTanqueSeleccionado] = useState(pedido.lote_id ?? '')
+  // Form asignar tanque (ya no es UUID manual — se clickea del selector)
+  const [tanqueSeleccionado, setTanqueSeleccionado] = useState<string>(pedido.tank_id ?? '')
 
   // Form cambiar status
   const [nuevoStatus, setNuevoStatus] = useState(pedido.status)
 
   // Form agregar update
-  const [updateStage,   setUpdateStage]   = useState('confirmed')
-  const [updateMsg,     setUpdateMsg]     = useState('')
-  const [updateImgUrl,  setUpdateImgUrl]  = useState('')
+  const [updateStage,  setUpdateStage]  = useState('confirmed')
+  const [updateMsg,    setUpdateMsg]    = useState('')
+  const [updateImgUrl, setUpdateImgUrl] = useState('')
 
   useEffect(() => {
     void Promise.all([
       cargarTodosLosTanques().then(t => { setTanques(t); setLoadingT(false) }),
       cargarUpdates(pedido.type, pedido.id).then(u => { setUpdates(u); setLoadingU(false) }),
     ])
-  }, [pedido.type, pedido.id])
+    // Si hay tanque asignado, cargar readings inmediatamente
+    if (pedido.tank_id) {
+      setLoadingR(true)
+      cargarReadings(pedido.tank_id, 30)
+        .then(r => setReadings(r))
+        .catch(e => console.error('cargarReadings error:', e))
+        .finally(() => setLoadingR(false))
+    }
+  }, [pedido.type, pedido.id, pedido.tank_id])
 
   function flash(msg: string) {
     setSuccess(msg)
@@ -404,17 +449,23 @@ function DetallePedidoModal({
     }
   }
 
-  // Acción 2: asignar lote (por ID de tanque → buscamos el lote_id del tanque)
-  async function handleAsignarLote(e: FormEvent) {
-    e.preventDefault()
-    if (!tanqueSeleccionado) { setError('Selecciona un lote para asignar'); return }
+  // Acción 2: asignar tanque via order_tank_assignments
+  async function handleAsignarTanque(tankId: string) {
+    if (!tankId) { setError('Selecciona un tanque para asignar'); return }
     setSaving(true); setError(null)
     try {
-      await asignarLote(pedido.type, pedido.id, tanqueSeleccionado)
-      flash('Lote asignado correctamente')
+      await asignarTanque(pedido.type, pedido.id, tankId)
+      setTanqueSeleccionado(tankId)
+      flash('Tanque asignado correctamente')
+      // Recargar readings del tanque recién asignado
+      setLoadingR(true)
+      cargarReadings(tankId, 30)
+        .then(r => setReadings(r))
+        .catch(e => console.error('cargarReadings error:', e))
+        .finally(() => setLoadingR(false))
       onUpdate()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error asignando lote')
+      setError(err instanceof Error ? err.message : 'Error asignando tanque')
     } finally {
       setSaving(false)
     }
@@ -437,7 +488,6 @@ function DetallePedidoModal({
       })
       setUpdateMsg('')
       setUpdateImgUrl('')
-      // Recargar updates
       const fresh = await cargarUpdates(pedido.type, pedido.id)
       setUpdates(fresh)
       flash('Update registrado')
@@ -447,6 +497,18 @@ function DetallePedidoModal({
       setSaving(false)
     }
   }
+
+  // Calcular last reading para display grande
+  const lastReading = readings.length > 0 ? readings[readings.length - 1] : null
+  const last10 = readings.slice(-10).reverse()
+
+  // Extraer arrays de valores para sparklines
+  const phValues    = readings.map(r => r.ph   ?? 0).filter(v => v > 0)
+  const tempValues  = readings.map(r => r.temp_c ?? 0).filter(v => v > 0)
+  const brixValues  = readings.map(r => r.brix  ?? 0).filter(v => v > 0)
+
+  // Tank name activo (puede ser del selector o del pedido)
+  const activeTankName = tanques.find(t => t.id === (tanqueSeleccionado || pedido.tank_id))?.name
 
   return (
     <div
@@ -487,10 +549,12 @@ function DetallePedidoModal({
             <DataCell label="Variedad"    value={pedido.variety} />
             <DataCell label="Proceso"     value={pedido.process} />
             <DataCell label="Kg"          value={pedido.total_kg > 0 ? `${pedido.total_kg} kg` : '—'} />
-            <DataCell label="Tanque"      value={pedido.tank_name} />
+            <DataCell label="Tanque"      value={activeTankName ?? pedido.tank_name} />
             {pedido.notes && <DataCell label="Notas" value={pedido.notes} span={2} />}
           </div>
         </section>
+
+        {/* ── SECCIÓN ACCIONES ─────────────────────────────────────────────── */}
 
         {/* Acción 1: Cambiar estado */}
         <section className="pcl-modal-section">
@@ -519,54 +583,44 @@ function DetallePedidoModal({
           </form>
         </section>
 
-        {/* Acción 2: Asignar lote */}
+        {/* Acción 2: Asignar tanque */}
         <section className="pcl-modal-section">
           <h3>
-            <Beaker size={14} strokeWidth={2} /> Asignar lote
+            <Beaker size={14} strokeWidth={2} /> Asignar tanque
           </h3>
           <p className="pcl-hint">
-            Ingresa el ID del lote de producción que atenderá este pedido.
+            Selecciona el tanque que fermentará este pedido. Se registra en{' '}
+            <code>order_tank_assignments</code> y libera el anterior si hubiera uno activo.
           </p>
           {loadingT ? (
             <div className="pcl-mini-loading"><Loader2 className="spin" size={16} /> Cargando tanques…</div>
+          ) : tanques.length === 0 ? (
+            <p className="pcl-hint">No hay tanques registrados en la base de datos.</p>
           ) : (
-            <form onSubmit={handleAsignarLote} className="pcl-action-form">
-              <input
-                type="text"
-                className="pcl-input"
-                placeholder="UUID del lote (ej. 3fa85f64-...)"
-                value={tanqueSeleccionado}
-                onChange={e => setTanqueSeleccionado(e.target.value)}
-                aria-label="ID del lote"
-              />
-              {tanques.length > 0 && (
-                <details className="pcl-tanques-list">
-                  <summary>Tanques disponibles ({tanques.filter(t => t.status === 'available').length})</summary>
-                  <div className="pcl-tanques-grid">
-                    {tanques.map(t => (
-                      <button
-                        key={t.id}
-                        type="button"
-                        className={`pcl-tanque-chip ${t.status !== 'available' ? 'pcl-tanque-chip--busy' : ''}`}
-                        title={`${t.name} — ${t.status}${t.capacity_liters ? ` — ${t.capacity_liters}L` : ''}`}
-                        onClick={() => setTanqueSeleccionado(t.id)}
-                      >
-                        {t.name}
-                        <small>{t.status}</small>
-                      </button>
-                    ))}
-                  </div>
-                </details>
-              )}
-              <button
-                type="submit"
-                className="pcl-btn pcl-btn--primary"
-                disabled={saving || !tanqueSeleccionado}
-              >
-                {saving ? <Loader2 className="spin" size={14} /> : null}
-                Asignar lote
-              </button>
-            </form>
+            <div className="pcl-tanques-grid pcl-tanques-grid--open">
+              {tanques.map(t => {
+                const isActive = t.id === (tanqueSeleccionado || pedido.tank_id)
+                const isBusy = t.status !== 'available' && !isActive
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className={[
+                      'pcl-tanque-chip',
+                      isBusy   ? 'pcl-tanque-chip--busy'   : '',
+                      isActive ? 'pcl-tanque-chip--active'  : '',
+                    ].join(' ').trim()}
+                    title={`${t.name} — ${t.status}${t.capacity_kg ? ` — ${t.capacity_kg} kg` : ''}`}
+                    disabled={saving || isBusy}
+                    onClick={() => void handleAsignarTanque(t.id)}
+                    aria-label={`Asignar tanque ${t.name}`}
+                  >
+                    {t.name}
+                    <small>{isActive ? 'asignado' : t.status}</small>
+                  </button>
+                )
+              })}
+            </div>
           )}
         </section>
 
@@ -629,7 +683,131 @@ function DetallePedidoModal({
           </form>
         </section>
 
-        {/* Historial de updates */}
+        {/* ── SECCIÓN CÓMO VA EL PROCESO ───────────────────────────────────── */}
+
+        <section className="pcl-modal-section">
+          <h3>
+            <Activity size={14} strokeWidth={2} /> Cómo va el proceso
+          </h3>
+
+          {/* Subsección A — Status history */}
+          <div className="pcl-proceso-block">
+            <div className="pcl-proceso-block-title">Estado actual</div>
+            <div className="pcl-status-history">
+              <span className={`pcl-badge ${badgeClass(pedido.status)}`}>
+                {statusIcon(pedido.status)} {STATUS_LABELS[pedido.status] ?? pedido.status}
+              </span>
+              <p className="pcl-hint pcl-hint--inline">
+                El histórico de cambios de estado estará disponible cuando agreguemos el trigger de auditoría.
+              </p>
+            </div>
+          </div>
+
+          {/* Subsección B — Curvas de fermentación */}
+          <div className="pcl-proceso-block">
+            <div className="pcl-proceso-block-title">
+              Curvas de fermentación
+              {activeTankName && (
+                <span className="pcl-tank-chip pcl-tank-chip--sm">{activeTankName}</span>
+              )}
+            </div>
+
+            {!pedido.tank_id && !tanqueSeleccionado ? (
+              <div className="pcl-proceso-empty">
+                <Beaker size={20} strokeWidth={1.4} />
+                <span>Sin tanque asignado — asigna un tanque para ver las curvas de fermentación.</span>
+              </div>
+            ) : loadingR ? (
+              <div className="pcl-mini-loading"><Loader2 className="spin" size={14} /> Cargando lecturas…</div>
+            ) : readings.length === 0 ? (
+              <div className="pcl-proceso-empty">
+                <Activity size={20} strokeWidth={1.4} />
+                <span>El tanque aún no tiene lecturas de sensor registradas.</span>
+              </div>
+            ) : (
+              <>
+                {/* Last reading — números grandes */}
+                {lastReading && (
+                  <div className="pcl-last-reading">
+                    <div className="pcl-reading-card pcl-reading-card--ph">
+                      <div className="pcl-reading-icon"><Droplets size={14} /></div>
+                      <div className="pcl-reading-value">{lastReading.ph?.toFixed(2) ?? '—'}</div>
+                      <div className="pcl-reading-label">pH</div>
+                    </div>
+                    <div className="pcl-reading-card pcl-reading-card--temp">
+                      <div className="pcl-reading-icon"><ThermometerSun size={14} /></div>
+                      <div className="pcl-reading-value">{lastReading.temp_c?.toFixed(1) ?? '—'}</div>
+                      <div className="pcl-reading-label">°C</div>
+                    </div>
+                    <div className="pcl-reading-card pcl-reading-card--brix">
+                      <div className="pcl-reading-icon"><Activity size={14} /></div>
+                      <div className="pcl-reading-value">{lastReading.brix?.toFixed(1) ?? '—'}</div>
+                      <div className="pcl-reading-label">°Brix</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Sparklines */}
+                <div className="pcl-sparklines-row">
+                  {phValues.length >= 2 && (
+                    <div className="pcl-sparkline-block">
+                      <span className="pcl-sparkline-label" style={{ color: '#A8327E' }}>pH</span>
+                      <Sparkline values={phValues} color="#A8327E" />
+                      <span className="pcl-sparkline-range">
+                        {Math.min(...phValues).toFixed(2)} – {Math.max(...phValues).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  {tempValues.length >= 2 && (
+                    <div className="pcl-sparkline-block">
+                      <span className="pcl-sparkline-label" style={{ color: '#C46A3C' }}>Temp</span>
+                      <Sparkline values={tempValues} color="#C46A3C" />
+                      <span className="pcl-sparkline-range">
+                        {Math.min(...tempValues).toFixed(1)} – {Math.max(...tempValues).toFixed(1)} °C
+                      </span>
+                    </div>
+                  )}
+                  {brixValues.length >= 2 && (
+                    <div className="pcl-sparkline-block">
+                      <span className="pcl-sparkline-label" style={{ color: '#7D8456' }}>Brix</span>
+                      <Sparkline values={brixValues} color="#7D8456" />
+                      <span className="pcl-sparkline-range">
+                        {Math.min(...brixValues).toFixed(1)} – {Math.max(...brixValues).toFixed(1)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Tabla últimas 10 lecturas */}
+                <div className="pcl-readings-table-wrap">
+                  <table className="pcl-readings-table">
+                    <thead>
+                      <tr>
+                        <th>Hora</th>
+                        <th>pH</th>
+                        <th>°C</th>
+                        <th>°Brix</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {last10.map(r => (
+                        <tr key={r.id}>
+                          <td>{formatDateTime(r.recorded_at)}</td>
+                          <td>{r.ph?.toFixed(2) ?? '—'}</td>
+                          <td>{r.temp_c?.toFixed(1) ?? '—'}</td>
+                          <td>{r.brix?.toFixed(1) ?? '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+
+        {/* ── HISTORIAL DE UPDATES ──────────────────────────────────────────── */}
+
         {(updates.length > 0 || loadingU) && (
           <section className="pcl-modal-section">
             <h3>Historial de updates</h3>

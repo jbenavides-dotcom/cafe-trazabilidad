@@ -14,8 +14,10 @@ import {
   FilePlus,
   AlertCircle,
   MapPin,
+  FlaskConical,
 } from 'lucide-react'
-import { batchGet, SHEET_2026_ID } from '../lib/sheets'
+import { runSeedTest, type SeedResult } from '../lib/seedTest'
+import { batchGet, SHEET_2026_ID, OFFERINGLIST_ID } from '../lib/sheets'
 import {
   PROGRAM_TEMPLATES,
   getProgramTemplates,
@@ -76,17 +78,22 @@ const STAGE_LABELS: Record<OfferingRecipient['funnel_stage'], string> = {
   lost: 'Lost',
 }
 
-// ─── Bache tipo local (fuente: CFF + AF + AS del Sheet 2026) ──────────────────
-interface BacheRow {
-  code: string
-  fecha: string
-  proveedor: string
-  variedad: string
-  proceso: string
-  kg: number
-  sca: string
+// ─── Opción de selección en wizard paso 2 (nanolote O bache aprobado) ─────────
+interface OfferingOption {
+  source: 'nanolote' | 'bache'
+  code: string              // NL-... o XXX-26
+  variety: string
+  process: string
+  kg_disponibles: number
+  // Solo nanolote
+  status?: string           // 'Libre'
+  edition?: string
+  provider?: string
+  // Solo bache
+  fecha?: string
+  proveedor?: string
+  sca?: string
   perfil?: string
-  notas?: string
 }
 
 // ─── Recipient form row ────────────────────────────────────────────────────────
@@ -111,7 +118,7 @@ interface WizardState {
   selectedCodes: string[]
   recipients: RecipientDraft[]
   loadingBaches: boolean
-  baches: BacheRow[]
+  baches: OfferingOption[]
   loadError: string | null
   validationError: string | null
   createdOffering: Offering | null
@@ -181,6 +188,34 @@ export default function Fichas() {
   const [templates, setTemplates] = useState<ProgramTemplate[]>(PROGRAM_TEMPLATES)
   const [migratedCount, setMigratedCount] = useState<number | null>(null)
   const [loadingData, setLoadingData] = useState(true)
+  const [seedRunning, setSeedRunning] = useState(false)
+  const [seedResult, setSeedResult] = useState<SeedResult | null>(null)
+  const [docsRefreshKey, setDocsRefreshKey] = useState(0)
+
+  async function handleSeedTest() {
+    setSeedRunning(true)
+    setSeedResult(null)
+    try {
+      const result = await runSeedTest()
+      setSeedResult(result)
+      // Si OK, recargar offerings + forzar reload de TabDocumentos (OCs/shippings/trips)
+      if (result.ok) {
+        const fresh = await getOfferings()
+        setOfferings(fresh)
+        setDocsRefreshKey(k => k + 1)
+      }
+    } catch (e) {
+      setSeedResult({
+        ok: false,
+        rows: {},
+        errors: { _exception: e instanceof Error ? e.message : String(e) },
+        total: 0,
+        durationMs: 0,
+      })
+    } finally {
+      setSeedRunning(false)
+    }
+  }
 
   // Carga inicial: templates + offerings + migración automática
   useEffect(() => {
@@ -221,9 +256,59 @@ export default function Fichas() {
           <h1><FileText size={26} /> Fichas técnicas</h1>
           <p className="ft-subtitle">Programas de café · Offerings · Embudo de ventas · Documentos comerciales</p>
         </div>
+        <button
+          className="btn btn-secondary"
+          onClick={handleSeedTest}
+          disabled={seedRunning}
+          title="Inserta datos de prueba en Supabase (1 buyer + 1 OC + 1 shipping + 1 trip + 1 offering)"
+          style={{ alignSelf: 'flex-start' }}
+        >
+          {seedRunning ? <Loader2 className="spin" size={16} /> : <FlaskConical size={16} />}
+          {seedRunning ? 'Subiendo…' : 'Subir datos de prueba'}
+        </button>
       </div>
 
       <SupabaseBanner migratedCount={migratedCount} />
+
+      {seedResult && (
+        <div
+          style={{
+            margin: '1rem 0',
+            padding: '1rem 1.25rem',
+            borderRadius: '8px',
+            border: `2px solid ${seedResult.ok ? '#10B981' : '#EF4444'}`,
+            background: seedResult.ok ? '#ECFDF5' : '#FEF2F2',
+            fontSize: '0.9rem',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <strong style={{ color: seedResult.ok ? '#065F46' : '#991B1B' }}>
+              {seedResult.ok
+                ? `✓ ${seedResult.total} filas insertadas en ${seedResult.durationMs}ms`
+                : `✗ Falló — ${Object.keys(seedResult.errors).length} tablas con error`}
+            </strong>
+            <button
+              onClick={() => setSeedResult(null)}
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.25rem', lineHeight: 1 }}
+              aria-label="Cerrar"
+            >×</button>
+          </div>
+          {Object.keys(seedResult.rows).length > 0 && (
+            <div style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#065F46' }}>
+              {Object.entries(seedResult.rows).map(([table, count]) => (
+                <div key={table}>{table}: +{count}</div>
+              ))}
+            </div>
+          )}
+          {Object.keys(seedResult.errors).length > 0 && (
+            <div style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#991B1B', marginTop: '0.5rem' }}>
+              {Object.entries(seedResult.errors).map(([table, msg]) => (
+                <div key={table}><strong>{table}:</strong> {msg}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="ft-tabs">
         {([
@@ -266,7 +351,7 @@ export default function Fichas() {
         <TabEmbudo offerings={offerings} templates={templates} />
       )}
 
-      {!loadingData && activeTab === 'documentos' && <TabDocumentos />}
+      {!loadingData && activeTab === 'documentos' && <TabDocumentos refreshKey={docsRefreshKey} />}
 
       {selectedOffering && (
         <OfferingDetail
@@ -565,7 +650,7 @@ function TabEmbudo({
 
 type DocSubTab = 'orders' | 'sea' | 'air' | 'trips'
 
-function TabDocumentos() {
+function TabDocumentos({ refreshKey = 0 }: { refreshKey?: number }) {
   const [subTab, setSubTab] = useState<DocSubTab>('orders')
   const [orders, setOrders] = useState<OrderConfirmation[]>([])
   const [shippings, setShippings] = useState<ShippingInfo[]>([])
@@ -588,7 +673,7 @@ function TabDocumentos() {
         setOrders(ords)
         setShippings(ships)
         setTrips(trps)
-        setActiveOrderId(ords[0]?.id ?? '')
+        setActiveOrderId(prev => prev || ords[0]?.id || '')
       } catch {
         setSupabaseWarning(true)
       } finally {
@@ -596,7 +681,7 @@ function TabDocumentos() {
       }
     }
     void loadDocs()
-  }, [])
+  }, [refreshKey])
 
   const activeOrder = orders.find(o => o.id === activeOrderId) ?? null
   const seaDocs = shippings.filter(s => s.mode === 'sea')
@@ -928,59 +1013,109 @@ function WizardNuevoOffering({
     setW(prev => ({ ...prev, ...updates, validationError: null }))
   }
 
-  async function loadBaches() {
+  async function loadOptions() {
     patch({ loadingBaches: true, loadError: null })
     try {
-      const data = await batchGet(SHEET_2026_ID, [
-        'CFF!A5:L200',
-        'AF!A2:J200',
-        'AS!B2:T200',
+      // Dos documentos distintos:
+      // - OFFERINGLIST_ID (catálogo vendible) — pestaña 'PT'
+      // - SHEET_2026_ID (operación interna) — pestañas CFF, AF, AS, MX_V, MX_MV
+      const [olData, opData] = await Promise.all([
+        batchGet(OFFERINGLIST_ID, ['PT!A5:M200']),
+        batchGet(SHEET_2026_ID, [
+          'CFF!A5:L200',
+          'AF!A2:J200',
+          'AS!B2:T200',
+          'MX_V!A5:Z200',
+          'MX_MV!A5:Z200',
+        ]),
       ])
 
+      const list: OfferingOption[] = []
+
+      // ═══ FUENTE 1: NANOLOTES de OfferingList → pestaña 'PT' ═══
+      // Estructura: A=project (PT/MV) · B=program (NL) · C=code · D=status (Libre/Bloqueado)
+      // E=edition · F=variety · G=process · H=provider · J=total_excelso_kg · K=total_salidas_kg
+      const olRows = olData['PT!A5:M200'] || []
+      for (const r of olRows) {
+        const project = r[0]?.trim()
+        if (project !== 'PT') continue   // solo nuestro proyecto, no Mejores Vecinos
+        const code = r[2]?.trim()
+        const status = r[3]?.trim()
+        if (!code || status !== 'Libre') continue
+        const total_excelso = parseFloat((r[9] || '0').toString().replace(',', '.'))
+        const total_salidas = parseFloat((r[10] || '0').toString().replace(',', '.'))
+        const kg_disponibles = total_excelso - total_salidas
+        if (isNaN(kg_disponibles) || kg_disponibles <= 0) continue
+        list.push({
+          source: 'nanolote',
+          code,
+          variety: r[5]?.trim() || '',
+          process: r[6]?.trim() || '',
+          kg_disponibles,
+          status,
+          edition: r[4]?.trim() || undefined,
+          provider: r[7]?.trim() || undefined,
+        })
+      }
+
+      // ═══ FUENTE 2: BACHES APROBADOS del CFF que NO estén en MX_V ni MX_MV ═══
+      // Set de códigos ya combinados en algún nanolote
+      const combinedCodes = new Set<string>()
+      for (const r of (opData['MX_V!A5:Z200'] || [])) {
+        const batch = r[1]?.trim()
+        if (batch) combinedCodes.add(batch)
+      }
+      for (const r of (opData['MX_MV!A5:Z200'] || [])) {
+        const batch = r[1]?.trim()
+        if (batch) combinedCodes.add(batch)
+      }
+
+      // AF: baches con análisis físico registrado (peso ANV en J = índice 9)
       const afCodes = new Set(
-        data['AF!A2:J200']
-          .filter(r => r[0]?.trim() && r[0] !== '#N/A' && r[9] && !isNaN(parseFloat(r[9])))
-          .map(r => r[0].trim())
+        (opData['AF!A2:J200'] || [])
+          .filter(r => r[0]?.trim() && r[0] !== '#N/A' && r[9] && !isNaN(parseFloat(String(r[9]))))
+          .map(r => (r[0] as string).trim())
       )
 
-      const asMap = new Map<string, { estado: string; sca: string; perfil: string; notas: string }>()
-      for (const r of data['AS!B2:T200']) {
+      // AS: mapa código → datos catación
+      const asMap = new Map<string, { estado: string; sca: string; perfil: string }>()
+      for (const r of (opData['AS!B2:T200'] || [])) {
         const batch = r[0]?.trim()
         if (!batch) continue
         asMap.set(batch, {
-          estado: r[18] || '',
-          sca: r[14] || '',
-          perfil: r[16] || '',
-          notas: r[17] || '',
+          estado: String(r[18] || ''),   // col T
+          sca: String(r[14] || ''),      // col P
+          perfil: String(r[16] || ''),   // col R
         })
       }
 
-      const cff = data['CFF!A5:L200']
-      const list: BacheRow[] = []
-      for (const r of cff) {
+      const cffRows = opData['CFF!A5:L200'] || []
+      for (const r of cffRows) {
         const code = r[3]?.trim()
         if (!code || code === '#') continue
-        const as_data = asMap.get(code)
-        const as_estado = as_data?.estado ?? ''
         if (!afCodes.has(code)) continue
-        if (!as_estado.toUpperCase().includes('APROBADO')) continue
-        const kg = parseFloat((r[9] || '0').replace(',', '.'))
+        const asData = asMap.get(code)
+        if (!asData?.estado.toUpperCase().includes('APROBADO')) continue
+        if (combinedCodes.has(code)) continue   // ya está en nanolote
+        const kg = parseFloat((r[9] || '0').toString().replace(',', '.'))
+        if (isNaN(kg) || kg <= 0) continue
         list.push({
+          source: 'bache',
           code,
-          fecha: r[0] || '',
-          proveedor: r[4] || '',
-          variedad: r[8] || '',
-          proceso: r[7] || '',
-          kg,
-          sca: as_data?.sca ?? '',
-          perfil: as_data?.perfil || undefined,
-          notas: as_data?.notas || undefined,
+          variety: r[8]?.trim() || '',
+          process: r[7]?.trim() || '',
+          kg_disponibles: kg,
+          fecha: r[0]?.trim() || undefined,
+          proveedor: r[4]?.trim() || undefined,
+          sca: asData.sca || undefined,
+          perfil: asData.perfil || undefined,
         })
       }
+
       patch({ baches: list, loadingBaches: false })
     } catch (e) {
       patch({
-        loadError: e instanceof Error ? e.message : 'Error cargando baches',
+        loadError: e instanceof Error ? e.message : 'Error cargando opciones',
         loadingBaches: false,
       })
     }
@@ -990,12 +1125,12 @@ function WizardNuevoOffering({
     if (!w.template) { patch({ validationError: 'Selecciona una plantilla.' }); return }
     if (!w.title.trim()) { patch({ validationError: 'El título es obligatorio.' }); return }
     patch({ step: 2 })
-    if (w.baches.length === 0) void loadBaches()
+    if (w.baches.length === 0) void loadOptions()
   }
 
   function goToStep3() {
-    if (w.selectedCodes.length < 4) { patch({ validationError: 'Selecciona al menos 4 baches.' }); return }
-    if (w.selectedCodes.length > 8) { patch({ validationError: 'Máximo 8 baches.' }); return }
+    if (w.selectedCodes.length < 2) { patch({ validationError: 'Selecciona entre 2 y 8 muestras (nanolotes o baches).' }); return }
+    if (w.selectedCodes.length > 8) { patch({ validationError: 'Selecciona entre 2 y 8 muestras (nanolotes o baches).' }); return }
     patch({ step: 3 })
   }
 
@@ -1024,18 +1159,18 @@ function WizardNuevoOffering({
 
   function buildPreviewSamples(): OfferingSample[] {
     return w.selectedCodes.map((code, idx) => {
-      const b = w.baches.find(bache => bache.code === code)
+      const b = w.baches.find(item => item.code === code)
       return {
         sample_order: idx + 1,
         bache_code: code,
-        variety: b?.variedad ?? '',
-        process: b?.proceso ?? '',
-        tasting_notes: b?.perfil ?? '',
-        availability_kg: b?.kg ?? 0,
+        variety: b?.variety ?? '',
+        process: b?.process ?? '',
+        tasting_notes: b?.source === 'bache' ? (b.perfil ?? '') : '',
+        availability_kg: b?.kg_disponibles ?? 0,
         price_usd_per_lb: 0,
-        tasting_score: b?.sca || undefined,
-        macroprofile: b?.perfil || undefined,
-        profile: b?.notas || undefined,
+        tasting_score: b?.source === 'bache' ? (b.sca || undefined) : undefined,
+        macroprofile: undefined,
+        profile: undefined,
       }
     })
   }
@@ -1047,19 +1182,23 @@ function WizardNuevoOffering({
       return
     }
 
+    // NOTA: si Supabase rechaza el INSERT con error "chk_ct_samples_4_8",
+    // ejecutar en el Editor SQL de Supabase:
+    //   ALTER TABLE public.ct_offerings DROP CONSTRAINT chk_ct_samples_4_8;
+    //   ALTER TABLE public.ct_offerings ADD CONSTRAINT chk_ct_samples_2_8 CHECK (samples_count BETWEEN 2 AND 8);
     const samples: OfferingSample[] = w.selectedCodes.map((code, idx) => {
-      const b = w.baches.find(bache => bache.code === code)
+      const b = w.baches.find(item => item.code === code)
       return {
         sample_order: idx + 1,
         bache_code: code,
-        variety: b?.variedad ?? '',
-        process: b?.proceso ?? '',
-        tasting_notes: b?.perfil ?? '',
-        availability_kg: b?.kg ?? 0,
+        variety: b?.variety ?? '',
+        process: b?.process ?? '',
+        tasting_notes: b?.source === 'bache' ? (b.perfil ?? '') : '',
+        availability_kg: b?.kg_disponibles ?? 0,
         price_usd_per_lb: 0,
-        tasting_score: b?.sca || undefined,
-        macroprofile: b?.perfil || undefined,
-        profile: b?.notas || undefined,
+        tasting_score: b?.source === 'bache' ? (b.sca || undefined) : undefined,
+        macroprofile: undefined,
+        profile: undefined,
       }
     })
 
@@ -1200,15 +1339,21 @@ function WizardNuevoOffering({
             {/* Paso 2 */}
             {w.step === 2 && (
               <>
-                <h2>Paso 2 — Seleccionar baches (4-8 muestras)</h2>
+                <h2>Paso 2 — Seleccionar nanolotes o baches (2-8 muestras)</h2>
                 {w.loadingBaches && <div className="ft-nanolotes-loading"><Loader2 className="spin" size={28} /></div>}
                 {w.loadError && <div className="ft-nanolotes-error">{w.loadError}</div>}
                 {!w.loadingBaches && !w.loadError && (
                   <>
-                    <div className="ft-nanolotes-count">
-                      <strong>{w.selectedCodes.length}</strong> / 8 seleccionados
-                      &nbsp;·&nbsp;{w.baches.length} baches APROBADOS
-                    </div>
+                    {(() => {
+                      const cntNano = w.baches.filter(b => b.source === 'nanolote').length
+                      const cntBache = w.baches.filter(b => b.source === 'bache').length
+                      return (
+                        <div className="ft-nanolotes-count">
+                          <strong>{w.selectedCodes.length}</strong> / 8 seleccionados &nbsp;·&nbsp; mínimo 2
+                          &nbsp;·&nbsp; {cntNano} nanolotes Libres + {cntBache} baches sueltos disponibles
+                        </div>
+                      )
+                    })()}
                     <div className="ft-nanolotes-grid">
                       {w.baches.map(b => {
                         const checked = w.selectedCodes.includes(b.code)
@@ -1217,8 +1362,11 @@ function WizardNuevoOffering({
                           <label
                             key={b.code}
                             className={`ft-nanolote-opt${checked ? ' selected' : ''}`}
-                            style={{ opacity: atLimit ? 0.45 : 1 }}
+                            style={{ opacity: atLimit ? 0.45 : 1, position: 'relative' }}
                           >
+                            <span className={`ft-source-badge ${b.source}`} aria-label={b.source}>
+                              {b.source === 'nanolote' ? 'NANOLOTE' : 'BACHE'}
+                            </span>
                             <input
                               type="checkbox"
                               checked={checked}
@@ -1227,11 +1375,19 @@ function WizardNuevoOffering({
                             />
                             <div>
                               <div className="ft-nanolote-opt-code">{b.code}</div>
-                              <div className="ft-nanolote-opt-info">{b.variedad} · {b.proceso}</div>
+                              <div className="ft-nanolote-opt-info">{b.variety} · {b.process}</div>
                               <div className="ft-nanolote-opt-info">
-                                {b.kg.toFixed(1)} kg{b.sca ? ` · SCA ${b.sca}` : ''}
+                                {b.kg_disponibles.toFixed(1)} kg disponibles
                               </div>
-                              {b.perfil && <div className="ft-nanolote-opt-perfil">{b.perfil}</div>}
+                              {b.source === 'bache' && b.sca && (
+                                <div className="ft-nanolote-opt-info">SCA {b.sca}</div>
+                              )}
+                              {b.source === 'bache' && b.proveedor && (
+                                <div className="ft-nanolote-opt-perfil">{b.proveedor}</div>
+                              )}
+                              {b.source === 'nanolote' && b.provider && (
+                                <div className="ft-nanolote-opt-perfil">{b.provider}</div>
+                              )}
                             </div>
                           </label>
                         )
@@ -1292,7 +1448,7 @@ function WizardNuevoOffering({
               coverMessage={w.cover_message}
               samples={previewSamples}
               recipients={previewRecipients}
-              minSamples={4}
+              minSamples={2}
             />
           </div>
         </div>

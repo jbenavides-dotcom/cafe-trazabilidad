@@ -303,23 +303,20 @@ function TableSummaryPage({
             </tr>
           </thead>
           <tbody>
-            {Array.from({ length: 8 }).map((_, i) => {
-              const s = samples[i]
-              return (
-                <tr key={i}>
-                  <td className="row-num">{i + 1}</td>
-                  <td className={!s?.variety ? 'empty' : ''}>{s?.variety ?? ''}</td>
-                  <td className={!s?.process ? 'empty' : ''}>{s?.process ?? ''}</td>
-                  <td className={!s?.tasting_notes ? 'empty' : ''}>{s?.tasting_notes ?? ''}</td>
-                  <td className={!(s?.availability_kg && s.availability_kg > 0) ? 'empty' : ''}>
-                    {s?.availability_kg && s.availability_kg > 0 ? `${s.availability_kg.toFixed(1)} kg` : ''}
-                  </td>
-                  <td className={!(s?.price_usd_per_lb && s.price_usd_per_lb > 0) ? 'empty' : ''}>
-                    {s?.price_usd_per_lb && s.price_usd_per_lb > 0 ? `$${s.price_usd_per_lb.toFixed(2)}/lb` : ''}
-                  </td>
-                </tr>
-              )
-            })}
+            {samples.map((s, i) => (
+              <tr key={s.bache_code ?? i}>
+                <td className="row-num">{i + 1}</td>
+                <td className={!s.variety ? 'empty' : ''}>{s.variety ?? ''}</td>
+                <td className={!s.process ? 'empty' : ''}>{s.process ?? ''}</td>
+                <td className={!s.tasting_notes ? 'empty' : ''}>{s.tasting_notes ?? ''}</td>
+                <td className={!(s.availability_kg && s.availability_kg > 0) ? 'empty' : ''}>
+                  {s.availability_kg && s.availability_kg > 0 ? `${s.availability_kg.toFixed(1)} kg` : ''}
+                </td>
+                <td className={!(s.price_usd_per_lb && s.price_usd_per_lb > 0) ? 'empty' : ''}>
+                  {s.price_usd_per_lb && s.price_usd_per_lb > 0 ? `$${s.price_usd_per_lb.toFixed(2)}/lb` : ''}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

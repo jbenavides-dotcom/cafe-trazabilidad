@@ -12,6 +12,7 @@ import AsignarNanolote from './pages/AsignarNanolote'
 import Ventas from './pages/Ventas'
 import Fichas from './pages/Fichas'
 import CraftLab from './pages/CraftLab'
+import PedidosCraftLab from './pages/PedidosCraftLab'
 import AppShell from './components/AppShell'
 import { getStoredUser, type AuthUser } from './lib/auth'
 
@@ -47,6 +48,7 @@ export default function App() {
         <Route path="/ventas" element={<Ventas />} />
         <Route path="/fichas" element={<Fichas />} />
         <Route path="/craftlab" element={<CraftLab />} />
+        <Route path="/pedidos-craftlab" element={<PedidosCraftLab />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

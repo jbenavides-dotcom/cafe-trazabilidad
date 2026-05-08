@@ -683,21 +683,20 @@ export function OfferingPDF({ offering }: { offering: Offering }) {
               </View>
             </View>
 
-            {/* 8 filas de datos */}
-            {Array.from({ length: 8 }).map((_, i) => {
-              const s = offering.samples[i] as OfferingSample | undefined
-              const variety      = s?.variety       ?? ''
-              const process      = s?.process       ?? ''
-              const tastingNotes = s?.tasting_notes ?? ''
-              const cantidad     = s?.availability_kg && s.availability_kg > 0
+            {/* Filas dinámicas — una por muestra (2-8) */}
+            {offering.samples.map((s: OfferingSample, i: number) => {
+              const variety      = s.variety       ?? ''
+              const process      = s.process       ?? ''
+              const tastingNotes = s.tasting_notes ?? ''
+              const cantidad     = s.availability_kg && s.availability_kg > 0
                 ? `${s.availability_kg.toFixed(1)} kg`
                 : ''
-              const precio       = s?.price_usd_per_lb && s.price_usd_per_lb > 0
+              const precio       = s.price_usd_per_lb && s.price_usd_per_lb > 0
                 ? `$${s.price_usd_per_lb.toFixed(2)}/lb`
                 : ''
 
               return (
-                <View key={i} style={S.tableRow}>
+                <View key={s.bache_code ?? i} style={S.tableRow}>
                   {/* Número */}
                   <View style={S.tableNumCell}>
                     <Text style={S.tableNumText}>{i + 1}</Text>

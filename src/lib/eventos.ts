@@ -14,6 +14,7 @@ export type EventoTipo =
   | 'estado_revertido'     // Devuelto de "Entregado" a "En Proceso"
   | 'venta_parcial'        // Despacho parcial de nanolote (queda saldo en OfferingList)
   | 'venta_total'          // Despacho total de nanolote (fila eliminada de OfferingList)
+  | 'datos_postsecado'     // Datos manuales post-secado guardados (KG brutos, muestras, humedad)
 
 export interface Evento {
   tipo: EventoTipo
@@ -92,6 +93,8 @@ function rolesParaTipo(tipo: EventoTipo): string[] {
     case 'venta_parcial':
     case 'venta_total':
       return ['comercial', 'felipe', 'calidad', 'sergio', 'ismelda']
+    case 'datos_postsecado':
+      return ['calidad', 'sergio', 'ismelda']
     default:
       return []
   }
@@ -138,5 +141,6 @@ export function etiquetaTipo(tipo: EventoTipo): string {
     case 'as_rechazado':     return 'Bache RECHAZADO'
     case 'venta_parcial':    return 'Venta parcial'
     case 'venta_total':      return 'Venta total (despacho completo)'
+    case 'datos_postsecado': return 'Datos post-secado guardados'
   }
 }

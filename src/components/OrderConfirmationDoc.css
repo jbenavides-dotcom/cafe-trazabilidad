@@ -1,0 +1,529 @@
+/* ─── OrderConfirmationDoc — split-screen formulario + preview ─── */
+
+/* Layout split — form 40% / preview 60% */
+.ocd-split {
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+
+@media (max-width: 1023px) {
+  .ocd-split {
+    grid-template-columns: 1fr;
+  }
+  .ocd-preview {
+    order: -1; /* preview arriba en mobile */
+  }
+}
+
+/* ─── Formulario ─── */
+.ocd-form {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Compactar los .field internos del formulario */
+.ocd-form .field {
+  margin-bottom: 12px;
+}
+
+.ocd-form .field label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  display: block;
+  font-weight: 600;
+  color: var(--color-gray-medium);
+}
+
+.ocd-form .field input,
+.ocd-form .field select,
+.ocd-form .field textarea {
+  padding: 8px 10px;
+  font-size: 13px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ocd-form-title {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-navy);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #E11D48;
+}
+
+.ocd-group-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+  color: #E11D48;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(225, 29, 72, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ocd-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ocd-row-3 {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 12px;
+}
+
+/* Items */
+.ocd-item-row {
+  display: grid;
+  /* Fila completa (bache-row) + 3 numéricos + botón eliminar */
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 8px;
+  align-items: end;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-gray-light);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+/* El selector+description ocupa toda la fila */
+.ocd-item-row > .ocd-item-bache-row {
+  grid-column: 1 / -1;
+}
+
+.ocd-add-item {
+  font-size: 0.72rem;
+  color: #E11D48;
+  background: none;
+  border: 1px dashed rgba(225, 29, 72, 0.4);
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+.ocd-add-item:hover { background: rgba(225, 29, 72, 0.06); }
+
+.ocd-remove-item {
+  background: none;
+  border: none;
+  color: var(--color-gray-medium);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.2rem 0.3rem;
+  align-self: center;
+}
+.ocd-remove-item:hover { color: #E11D48; }
+
+/* Error de guardado */
+.ocd-save-error {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: var(--radius-md);
+  color: #b91c1c;
+  font-size: 12px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+
+/* Actions */
+.ocd-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-gray-light);
+}
+
+/* ─── Preview container ─── */
+/* sticky funciona porque .app-main ya no tiene overflow-y:auto (scroll en body) */
+/* Sin max-height ni overflow para que el documento se vea completo sin scroll interno */
+@media (min-width: 1024px) {
+  .ocd-preview {
+    position: sticky;
+    top: 80px; /* 64px header + 16px respiro */
+  }
+}
+
+.ocd-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+@media (max-width: 1023px) {
+  .ocd-preview {
+    position: static;
+  }
+}
+
+.ocd-preview-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-gray-medium);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DOCUMENTO VISUAL — PIXEL-PERFECT según PNG referencia
+   ═══════════════════════════════════════════════════════════ */
+
+.ocd-doc {
+  background: #FBF7F0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.14), 0 1px 6px rgba(0,0,0,0.08);
+  font-family: 'Inter', sans-serif;
+  max-width: 720px;
+  width: 100%;
+}
+
+/* ── 1. Banda negra superior ── */
+.ocd-doc-black-band {
+  background: #000000;
+  padding: 7px 20px;
+  text-align: center;
+}
+
+.ocd-doc-black-band-text {
+  color: #ffffff;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+}
+
+/* ── 2. Bloque logo ── */
+.ocd-doc-logo-block {
+  background: #FBF7F0;
+  padding: 28px 32px 24px;
+  text-align: center;
+  border-bottom: none;
+}
+
+.ocd-doc-logo-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 8.5px;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.ocd-doc-logo-amp {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 11px;
+  color: #1a1a1a;
+}
+
+.ocd-doc-logo-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 38px;
+  font-weight: 700;
+  color: #E91E8C;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.ocd-doc-logo-main-from {
+  font-style: normal;
+  font-weight: 700;
+}
+
+.ocd-doc-logo-main-the {
+  font-style: italic;
+  font-weight: 400;
+  font-size: 30px;
+}
+
+.ocd-doc-logo-main-heart {
+  font-style: normal;
+  font-weight: 700;
+}
+
+/* ── 3. Título Order Confirmation ── */
+.ocd-doc-title-block {
+  background: #FBF7F0;
+  text-align: center;
+  padding: 20px 32px 16px;
+}
+
+.ocd-doc-title-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 48px;
+  font-weight: 400;
+  color: #E91E8C;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+
+.ocd-doc-title-date {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 400;
+  color: #C2185B;
+  margin-top: 6px;
+  letter-spacing: 0.01em;
+}
+
+/* ── 4. Mensaje introductorio ── */
+.ocd-doc-intro {
+  background: #FBF7F0;
+  padding: 0 32px 20px;
+}
+
+.ocd-doc-intro p {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: #2D2D2D;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.ocd-doc-intro p:last-child {
+  margin-bottom: 0;
+}
+
+/* ── 5. Cajas Buyer / Seller — UNA sola caja fucsia con 2 columnas internas ── */
+.ocd-doc-parties-outer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin: 0 32px 20px;
+  background: #E91E8C;
+  border-radius: 6px;
+  padding: 18px 18px 16px;
+  gap: 24px;
+}
+
+.ocd-doc-party-col {
+  /* columna interna, sin fondo propio */
+}
+
+.ocd-doc-party-col-label {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+  line-height: 1;
+}
+
+.ocd-doc-party-col-lines {
+  font-family: 'Inter', sans-serif;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: #ffffff;
+  line-height: 1.65;
+}
+
+/* ── 6. Tabla ── */
+.ocd-doc-table-wrapper {
+  padding: 0 32px 20px;
+  background: #FBF7F0;
+}
+
+.ocd-doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  border: 1px solid #E91E8C;
+}
+
+.ocd-doc-table thead tr {
+  background: #E91E8C;
+}
+
+.ocd-doc-table th {
+  padding: 9px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.03em;
+  border: 1px solid #E91E8C;
+}
+
+.ocd-doc-table th:not(:first-child),
+.ocd-doc-num {
+  text-align: right;
+}
+
+.ocd-doc-table td {
+  padding: 8px 12px;
+  color: #2D2D2D;
+  border: 1px solid #E91E8C;
+  vertical-align: middle;
+  background: #ffffff;
+}
+
+/* Fila total — celdas vacías también blancas */
+.ocd-doc-table tfoot tr td {
+  background: #ffffff;
+  border: 1px solid #E91E8C;
+  font-weight: 400;
+  color: #2D2D2D;
+}
+
+.ocd-doc-tfoot-label-cell {
+  background: #E91E8C !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  text-align: right;
+  font-size: 11px;
+  padding: 9px 12px;
+}
+
+.ocd-doc-grand-total-cell {
+  font-weight: 700;
+  color: #2D2D2D;
+  text-align: right;
+}
+
+/* ── 7. Specs ── */
+.ocd-doc-specs {
+  padding: 4px 32px 28px;
+  background: #FBF7F0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.ocd-doc-spec-row {
+  display: flex;
+  gap: 0;
+  font-size: 12px;
+  line-height: 1.65;
+  align-items: baseline;
+}
+
+.ocd-doc-spec-key {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  color: #1a1a1a;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.ocd-doc-spec-colon {
+  font-weight: 700;
+  color: #1a1a1a;
+  font-size: 11.5px;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.ocd-doc-spec-value {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  color: #2D2D2D;
+  font-size: 11.5px;
+}
+
+/* Preparación varietal — multilinea con indent */
+.ocd-doc-spec-multiline {
+  display: flex;
+  flex-direction: column;
+}
+
+.ocd-doc-spec-multiline-continuation {
+  padding-left: 16px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  color: #2D2D2D;
+  font-size: 11.5px;
+  line-height: 1.65;
+}
+
+/* ─── Item row — selector de bache + description + programa ─── */
+.ocd-item-bache-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 0.7fr;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+
+.ocd-item-bache-select {
+  padding: 7px 10px;
+  font-size: 12px;
+  border: 1px solid var(--color-gray-medium);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--color-dark-text);
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+}
+.ocd-item-bache-select:focus {
+  outline: none;
+  border-color: #E11D48;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.1);
+}
+
+.ocd-item-bache-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  color: var(--color-gray-medium);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.ocd-item-loading {
+  font-size: 0.72rem;
+  color: var(--color-gray-medium);
+  font-style: italic;
+  padding: 4px 0;
+}
+
+.ocd-item-bache-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  background: rgba(225, 29, 72, 0.08);
+  color: #E11D48;
+  border-radius: var(--radius-pill);
+  margin-bottom: 4px;
+}
+
+/* ─── Columna programa en la tabla del preview ─── */
+/* El color se aplica inline via PROGRAM_COLORS, sin clases de badge */
+.ocd-doc-program-text {
+  font-weight: 700;
+  font-size: 11.5px;
+}

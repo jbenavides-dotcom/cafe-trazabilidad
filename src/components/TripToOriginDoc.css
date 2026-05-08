@@ -1,0 +1,622 @@
+/* ─── TripToOriginDoc — split-screen formulario + preview 5 páginas ─── */
+
+/* Paleta fucsia Trip to Origin */
+:root {
+  --tto-fuchsia: #E91E84;
+  --tto-magenta-dark: #A1054C;
+  --tto-pink-light: #F8A6C7;
+  --tto-pink-footer: #F2C4D8;
+  --tto-cream: #FAF6EE;
+}
+
+/* Layout split — form 40% / preview 60% */
+.tto-split {
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+
+@media (max-width: 1023px) {
+  .tto-split {
+    grid-template-columns: 1fr;
+  }
+  .tto-preview {
+    order: -1;
+  }
+}
+
+/* ─── Formulario ─── */
+.tto-form {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.tto-form .field {
+  margin-bottom: 12px;
+}
+
+.tto-form .field label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  display: block;
+  font-weight: 600;
+  color: var(--color-gray-medium);
+}
+
+.tto-form .field input,
+.tto-form .field select,
+.tto-form .field textarea {
+  padding: 8px 10px;
+  font-size: 13px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tto-form-title {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-navy);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--tto-fuchsia);
+}
+
+.tto-group-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+  color: var(--tto-fuchsia);
+  margin-top: 16px;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(233, 30, 132, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tto-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Days */
+.tto-day-card {
+  border: 1px solid rgba(233, 30, 132, 0.2);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #fdf6fa;
+}
+
+.tto-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.tto-day-number {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--tto-fuchsia);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tto-day-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* Schedule items */
+.tto-schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.tto-schedule-item {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr auto;
+  gap: 6px;
+  align-items: start;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid var(--color-gray-light);
+  border-radius: var(--radius-sm);
+}
+
+.tto-schedule-item input {
+  padding: 5px 8px;
+  font-size: 12px;
+  border: 1px solid var(--color-gray-medium);
+  border-radius: var(--radius-sm);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tto-schedule-item input:focus {
+  outline: none;
+  border-color: var(--tto-fuchsia);
+  box-shadow: 0 0 0 2px rgba(233, 30, 132, 0.1);
+}
+
+/* Botones add/remove */
+.tto-btn-add {
+  font-size: 0.72rem;
+  color: var(--tto-fuchsia);
+  background: none;
+  border: 1px dashed rgba(233, 30, 132, 0.4);
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+.tto-btn-add:hover { background: rgba(233, 30, 132, 0.06); }
+
+.tto-btn-remove {
+  background: none;
+  border: none;
+  color: var(--color-gray-medium);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.2rem 0.3rem;
+  align-self: center;
+  line-height: 1;
+}
+.tto-btn-remove:hover { color: var(--tto-fuchsia); }
+
+/* Error de guardado */
+.tto-save-error {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: var(--radius-md);
+  color: #b91c1c;
+  font-size: 12px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+
+/* Actions */
+.tto-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-gray-light);
+}
+
+/* ─── Preview container ─── */
+@media (min-width: 1024px) {
+  .tto-preview {
+    position: sticky;
+    top: 80px;
+  }
+}
+
+.tto-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+@media (max-width: 1023px) {
+  .tto-preview {
+    position: static;
+  }
+}
+
+.tto-preview-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-gray-medium);
+  font-weight: 600;
+}
+
+/* ─── Stack de 5 páginas en el preview ─── */
+.tto-pages-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Cada página replica 9:16 visual (810×1440 original → 380×676 preview) */
+.tto-page {
+  width: 100%;
+  max-width: 380px;
+  aspect-ratio: 9 / 16;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.14), 0 1px 5px rgba(0,0,0,0.08);
+  font-family: 'Inter', sans-serif;
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ══ Página 1 — Cover fucsia ══ */
+.tto-p1 {
+  background: var(--tto-fuchsia);
+  color: white;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+}
+
+.tto-p1-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 18px;
+  gap: 8px;
+  text-align: center;
+}
+
+.tto-p1-logo-brand {
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 2px;
+}
+
+.tto-p1-logo-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.tto-p1-itinerary-label {
+  font-size: 9px;
+  color: rgba(255,255,255,0.88);
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.tto-p1-client-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--tto-pink-light);
+  line-height: 1.2;
+  margin-bottom: 12px;
+  min-height: 24px;
+}
+
+.tto-p1-tagline {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 10px;
+  color: rgba(255,255,255,0.9);
+  line-height: 1.4;
+}
+
+.tto-p1-footer {
+  width: 100%;
+  background: var(--tto-pink-footer);
+  padding: 7px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tto-p1-footer-text {
+  font-size: 7.5px;
+  color: var(--tto-magenta-dark);
+  font-weight: 500;
+}
+
+/* ══ Página 2 — Welcome split ══ */
+.tto-p2 {
+  display: flex;
+  flex-direction: column;
+}
+
+.tto-p2-top {
+  background: var(--tto-fuchsia);
+  flex: 0 0 60%;
+  padding: 16px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tto-p2-logo-small {
+  font-size: 7px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 4px;
+}
+
+.tto-p2-headline {
+  font-family: 'Playfair Display', serif;
+  font-size: 9px;
+  color: rgba(255,255,255,0.9);
+  font-style: italic;
+  margin-bottom: 2px;
+}
+
+.tto-p2-welcome {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--tto-magenta-dark);
+  line-height: 1;
+  margin: 4px 0 6px;
+}
+
+.tto-p2-paras {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tto-p2-para {
+  font-size: 8px;
+  color: rgba(255,255,255,0.9);
+  line-height: 1.45;
+}
+
+.tto-p2-bottom {
+  background: var(--tto-cream);
+  flex: 1;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.tto-p2-date-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--tto-magenta-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.tto-p2-date-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 14px;
+  color: var(--tto-magenta-dark);
+  font-weight: 400;
+}
+
+/* ══ Páginas 3-4 — Journey days ══ */
+.tto-pday {
+  background: var(--tto-fuchsia);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0;
+}
+
+.tto-pday-body {
+  flex: 1;
+  padding: 14px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.tto-pday-pill-top {
+  display: inline-flex;
+  align-items: center;
+  background: white;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--tto-fuchsia);
+  text-transform: uppercase;
+  align-self: flex-start;
+}
+
+.tto-pday-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  line-height: 1.1;
+}
+
+.tto-pday-subtitle {
+  font-size: 8px;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.tto-pday-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Card timeline de día */
+.tto-day-timeline-card {
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 8px;
+  padding: 8px 10px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.tto-day-timeline-pill {
+  display: inline-flex;
+  background: white;
+  border-radius: 16px;
+  padding: 2px 8px;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 7.5px;
+  color: var(--tto-fuchsia);
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.tto-day-date-chip {
+  display: inline-flex;
+  background: var(--tto-magenta-dark);
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 6.5px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.tto-timeline-items {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tto-timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.tto-timeline-time-chip {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5px 5px;
+  font-size: 6px;
+  font-weight: 600;
+  color: var(--tto-fuchsia);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tto-timeline-activity {
+  font-size: 7px;
+  color: white;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.tto-timeline-desc {
+  font-size: 6px;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.3;
+}
+
+.tto-pday-footer {
+  width: 100%;
+  background: var(--tto-pink-footer);
+  padding: 5px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tto-pday-footer-text {
+  font-size: 6.5px;
+  color: var(--tto-magenta-dark);
+  font-weight: 500;
+}
+
+/* ══ Página 5 — Closing crema ══ */
+.tto-p5 {
+  background: var(--tto-cream);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+}
+
+.tto-p5-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+  text-align: center;
+  gap: 12px;
+}
+
+.tto-p5-closing-text {
+  font-size: 9.5px;
+  color: #2C2D2E;
+  line-height: 1.6;
+  max-width: 280px;
+}
+
+.tto-p5-see-you {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-style: italic;
+  color: var(--tto-fuchsia);
+  font-weight: 400;
+}
+
+.tto-p5-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.tto-p5-logo-brand {
+  font-size: 7px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--tto-fuchsia);
+}
+
+.tto-p5-logo-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tto-fuchsia);
+  line-height: 1;
+}
+
+.tto-p5-footer {
+  width: 100%;
+  background: var(--tto-pink-footer);
+  padding: 7px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tto-p5-footer-text {
+  font-size: 7.5px;
+  color: var(--tto-magenta-dark);
+  font-weight: 500;
+}

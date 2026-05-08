@@ -1,11 +1,40 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Allura&family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&display=swap');
 
 :root {
-  /* Brand Colors — idénticos CraftLab */
-  --color-brand-red: #c1004a;
+  /* ── Brand core (design system completo) ── */
+  --color-navy: #0E1E36;
+  --color-navy-80: #162A4A;
+  --color-cream: #F6F1E8;
+  --color-cream-2: #EFE7D8;
+  --color-paper: #FDFBF7;
+  --color-accent: #C1004A;
+
+  /* Typography tokens */
+  --color-ink: #121820;
+  --color-ink-60: #4A5362;
+  --color-ink-40: #858D9A;
+  --color-line: rgba(18, 24, 32, 0.10);
+
+  /* Programs */
+  --fb-bg: #0E1E36; --fb-ink: #F6F1E8;
+  --cl-bg: #C4624A; --cl-ink: #FFF4EC;
+  --se-bg: #5E6B3A; --se-ink: #F4F1E0;
+
+  /* Microlots (fichas Offering) */
+  --ml-fth-bg: #A8327E;
+  --ml-pulse-bg: #E97062;
+  --ml-nature-bg: #8470B5;
+  --ml-collab-bg: #7D8456;
+  --ml-stripe: #E91E83;
+  --ml-table-label: #B8004C;
+  --ml-table-border: #E91E83;
+  --ml-bottom-bar: #F36AAB;
+  --ml-cream: #F6F1E8;
+
+  /* ── Brand Colors — compatibilidad legacy ── */
+  --color-brand-red: #C1004A;
   --color-brand-pink: #fbc2c4;
   --color-pink-bg: var(--color-brand-pink);
-  --color-navy: #0e1e36;
   --color-dark-text: #1a1a1a;
   --color-gray-light: #ececec;
   --color-gray-medium: #b3b3b3;
@@ -16,7 +45,7 @@
   --color-state-proceso: #b78a48;     /* tan — en proceso */
   --color-state-analisis: #0e1e36;    /* navy — entregado a análisis */
   --color-state-aprobado: #2d6a4f;    /* verde — aprobado */
-  --color-state-rechazado: #c1004a;   /* rojo brand — rechazado */
+  --color-state-rechazado: #C1004A;   /* rojo brand — rechazado */
   --color-state-disponible: #2d6a4f;  /* verde — disponible venta */
   --color-state-despachado: #6c757d;  /* gris — ya despachado */
 

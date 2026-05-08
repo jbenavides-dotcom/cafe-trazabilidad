@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Package, FlaskConical, Coffee, ShoppingBag, LogOut, Menu, X, Beaker, Sparkles } from 'lucide-react'
+import { LayoutDashboard, Package, FlaskConical, Coffee, ShoppingBag, LogOut, Menu, X, Beaker, Sparkles, FileText } from 'lucide-react'
 import { logout, type AuthUser } from '../lib/auth'
 import './AppShell.css'
 
@@ -25,6 +25,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/nanolotes', label: 'Nanolotes', icon: Coffee },
   { path: '/craftlab', label: 'CraftLab', icon: Sparkles },
   { path: '/ventas', label: 'Ventas', icon: ShoppingBag },
+  { path: '/fichas', label: 'Fichas técnicas', icon: FileText },
 ]
 
 export default function AppShell({ user, onLogout, children }: Props) {

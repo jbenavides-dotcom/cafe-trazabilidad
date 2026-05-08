@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, FlaskConical, Coffee, Loader2, CheckCircle2, Beaker, Send, RotateCcw, Clock } from 'lucide-react'
-import { batchGet, SHEET_2026_ID } from '../lib/sheets'
-import { origenDeBache, cambiarEstadoBache, puedeRevertirseEstado } from '../lib/trazabilidad'
+import { ArrowLeft, FlaskConical, Coffee, Loader2, CheckCircle2, Beaker, Send, RotateCcw, Clock, Save } from 'lucide-react'
+import { batchGet, writeRange, columnLetter, SHEET_2026_ID } from '../lib/sheets'
+import { origenDeBache, cambiarEstadoBache, findCFFRow, puedeRevertirseEstado } from '../lib/trazabilidad'
 import { registrarEvento, eventosDeBache, tiempoRelativo, etiquetaTipo } from '../lib/eventos'
 import { getStoredUser } from '../lib/auth'
 import './DetalleBache.css'
@@ -23,6 +23,18 @@ interface BacheDetalle {
   af: AnalisisFisicoFicha | null
   as: AnalisisSensorialFicha | null
   mxv: { nanolote?: string; combina_con?: string } | null
+  // Datos post-secado (CFF cols ~M-S, cuando el bache está listo para análisis)
+  postSecado: PostSecadoData
+}
+
+interface PostSecadoData {
+  kg_brutos: string        // KG CPS/CCS BRUTOS — antes de muestras
+  muestras: string         // MUESTRAS — kg/g separados para análisis
+  sacos: string            // SACOS — número de sacos almacenados
+  kg_disp_ccs_cps: string  // KG DISPONIBLES EN CCS/CPS — netos tras descontar muestras
+  factor_conversion: string // FC CPS/CCS — Factor de conversión (4.5-5.5 CPS · 3-4.5 CCS)
+  humedad_cps: string      // HUMEDAD CPS/CCS — % humedad medido
+  kg_disponibles: string   // KG DISPONIBLES — kg final disponibles
 }
 
 interface AnalisisFisicoFicha {
@@ -93,8 +105,94 @@ export default function DetalleBache() {
   const [enviando, setEnviando] = useState(false)
   const [duracionMs, setDuracionMs] = useState<number | null>(null)
 
+  // ── Campos editables post-secado ──────────────────────────────────────────
+  // Valores controlados para los 3 campos manuales
+  const [kgBrutos, setKgBrutos] = useState('')
+  const [muestras, setMuestras] = useState('')
+  const [humedad, setHumedad] = useState('')
+  // Snapshot de los valores al cargar — para detectar si hubo cambios
+  const savedPostSecado = useRef({ kgBrutos: '', muestras: '', humedad: '' })
+
+  const [guardando, setGuardando] = useState(false)
+  const [guardadoOk, setGuardadoOk] = useState(false)
+  const [errorGuardado, setErrorGuardado] = useState<string | null>(null)
+
+  // Índices de columna de los 3 campos manuales en CFF — se populan al cargar
+  // Guardamos los índices (0-based) para construir la letra de columna al escribir
+  const colIdxRefs = useRef({ kg_brutos: -1, muestras: -1, humedad_cps: -1 })
+
+  const haycambiosSinGuardar =
+    kgBrutos !== savedPostSecado.current.kgBrutos ||
+    muestras  !== savedPostSecado.current.muestras  ||
+    humedad   !== savedPostSecado.current.humedad
+
+  async function guardarPostSecado() {
+    if (!bache) return
+    if (!kgBrutos && !muestras && !humedad) return
+    setGuardando(true)
+    setErrorGuardado(null)
+    setGuardadoOk(false)
+    try {
+      const row = await findCFFRow(bache.numero)
+
+      // Construir letra de columna desde índice 0-based guardado en colIdxRefs.
+      // columnLetter espera 1-based (1 → A, 13 → M, …)
+      const { kg_brutos: idxM, muestras: idxN, humedad_cps: idxR } = colIdxRefs.current
+
+      if (idxM < 0 || idxN < 0 || idxR < 0) {
+        throw new Error(
+          'No se encontraron las columnas KG CPS/CCS BRUTOS / MUESTRAS / HUMEDAD CPS/CCS en el Sheet. ' +
+          'Revisa los headers de la fila 4 del CFF.'
+        )
+      }
+
+      const colM = columnLetter(idxM + 1)  // índice 0-based → 1-based para columnLetter
+      const colN = columnLetter(idxN + 1)
+      const colR = columnLetter(idxR + 1)
+
+      // Escribimos cada celda individualmente porque las columnas no son contiguas
+      if (kgBrutos) await writeRange(SHEET_2026_ID, `CFF!${colM}${row}`, [[parseFloat(kgBrutos)]])
+      if (muestras)  await writeRange(SHEET_2026_ID, `CFF!${colN}${row}`, [[parseFloat(muestras)]])
+      if (humedad)   await writeRange(SHEET_2026_ID, `CFF!${colR}${row}`, [[parseFloat(humedad)]])
+
+      // Actualizar snapshot para que el botón Guardar se deshabilite de nuevo
+      savedPostSecado.current = { kgBrutos, muestras, humedad }
+
+      registrarEvento({
+        tipo: 'datos_postsecado',
+        bache: bache.numero,
+        detalle: `KG brutos: ${kgBrutos} · Muestras: ${muestras} · Humedad: ${humedad}%`,
+        usuario: getStoredUser(),
+      })
+
+      setGuardadoOk(true)
+      // Refrescar para que los auto-calculados muestren los nuevos valores
+      await load()
+    } catch (e) {
+      setErrorGuardado(e instanceof Error ? e.message : 'Error guardando datos post-secado')
+    } finally {
+      setGuardando(false)
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   async function entregarAnalisis() {
     if (!bache) return
+
+    // Validar que los 3 campos manuales estén llenos antes de cambiar estado
+    const faltantes: string[] = []
+    if (!bache.postSecado.kg_brutos && !kgBrutos) faltantes.push('KG CPS/CCS BRUTOS')
+    if (!bache.postSecado.muestras && !muestras)   faltantes.push('MUESTRAS')
+    if (!bache.postSecado.humedad_cps && !humedad) faltantes.push('HUMEDAD CPS/CCS')
+    if (faltantes.length > 0) {
+      alert(
+        `Antes de entregar a análisis debes registrar:\n\n` +
+        faltantes.map(f => '• ' + f).join('\n') +
+        `\n\nEstos datos se llenan manualmente en la sección "Datos manuales (post-secado)".`
+      )
+      return
+    }
+
     if (!confirm(`¿Marcar el bache ${bache.numero} como «Entregado a Analisis»?\n\nEsto dispara la propagación a AF y AS y notifica a Sergio + Ismelda.`)) return
     const t0 = performance.now()
     setEnviando(true)
@@ -160,13 +258,66 @@ export default function DetalleBache() {
     setError(null)
     try {
       const data = await batchGet(SHEET_2026_ID, [
-        'CFF!A5:L200',
+        'CFF!A4:T200',  // Fila 4 = headers; A5:T200 = datos. Extendido hasta T para post-secado.
         'AF!A2:AW200',  // Hasta AW para incluir 19 defectos detallados
         'AS!A2:T200',
         'MX_V!A4:X50',
       ])
-      const cff = data['CFF!A5:L200'].find(r => r[3] === numero)
+
+      // Fila 4 (índice 0) = headers del CFF — usamos para mapear columnas por nombre
+      const cffRows = data['CFF!A4:T200']
+      const headerRow: string[] = cffRows[0] ?? []
+
+      // Función auxiliar: índice de columna por nombre de header (insensible a mayúsculas y espacios extra)
+      function colIdx(name: string): number {
+        return headerRow.findIndex(
+          h => h.trim().toLowerCase() === name.trim().toLowerCase()
+        )
+      }
+
+      // Columnas base (ya validadas previamente)
+      const IDX_FECHA_ENT = 0
+      const IDX_FECHA_COS = 1
+      const IDX_REMISION  = 2
+      const IDX_NUMERO    = 3
+      const IDX_PROVEEDOR = 4
+      const IDX_PROGRAMA  = 5
+      const IDX_PROCESO   = 7
+      const IDX_VARIEDAD  = 8
+      const IDX_KG_CCF    = 9
+      const IDX_DESTINO   = 10
+      const IDX_ESTADO    = 11
+
+      // Columnas post-secado — buscadas por nombre de header
+      const IDX_KG_BRUTOS      = colIdx('KG CPS/CCS BRUTOS')
+      const IDX_MUESTRAS        = colIdx('MUESTRAS')
+      const IDX_SACOS           = colIdx('SACOS')
+      const IDX_KG_DISP_CCS    = colIdx('KG DISPONIBLES EN CCS/CPS')
+      const IDX_FC              = colIdx('FC CPS/CCS')
+      const IDX_HUMEDAD_CPS     = colIdx('HUMEDAD CPS/CCS')
+      const IDX_KG_DISP         = colIdx('KG DISPONIBLES')
+
+      // Log para diagnóstico — visible en DevTools durante desarrollo
+      console.log('[DetalleBache] CFF headers A-T:', headerRow)
+      console.log('[DetalleBache] Mapeo post-secado:', {
+        kg_brutos:       { header: headerRow[IDX_KG_BRUTOS],   idx: IDX_KG_BRUTOS },
+        muestras:        { header: headerRow[IDX_MUESTRAS],    idx: IDX_MUESTRAS },
+        sacos:           { header: headerRow[IDX_SACOS],       idx: IDX_SACOS },
+        kg_disp_ccs_cps: { header: headerRow[IDX_KG_DISP_CCS], idx: IDX_KG_DISP_CCS },
+        factor_conv:     { header: headerRow[IDX_FC],          idx: IDX_FC },
+        humedad_cps:     { header: headerRow[IDX_HUMEDAD_CPS], idx: IDX_HUMEDAD_CPS },
+        kg_disponibles:  { header: headerRow[IDX_KG_DISP],     idx: IDX_KG_DISP },
+      })
+
+      // Filas de datos = desde índice 1 (saltamos la fila de headers)
+      const cff = cffRows.slice(1).find(r => r[IDX_NUMERO] === numero)
       if (!cff) throw new Error(`Bache ${numero} no encontrado en CFF`)
+
+      // Función auxiliar para leer una celda de cff de forma segura
+      function cffCol(idx: number): string {
+        if (idx < 0) return ''
+        return cff![idx] ?? ''
+      }
 
       // AF "llenado de verdad" = humedad (col J, índice 9) numérica
       // (el código aparece automático por fórmulas VLOOKUP cuando CFF cambia a "Entregado a Analisis")
@@ -196,25 +347,56 @@ export default function DetalleBache() {
         }
       }
 
+      // Guardar índices de columnas manuales para usar al escribir
+      colIdxRefs.current = {
+        kg_brutos:   IDX_KG_BRUTOS,
+        muestras:    IDX_MUESTRAS,
+        humedad_cps: IDX_HUMEDAD_CPS,
+      }
+
+      const ps: PostSecadoData = {
+        kg_brutos:         cffCol(IDX_KG_BRUTOS),
+        muestras:          cffCol(IDX_MUESTRAS),
+        sacos:             cffCol(IDX_SACOS),
+        kg_disp_ccs_cps:   cffCol(IDX_KG_DISP_CCS),
+        factor_conversion: cffCol(IDX_FC),
+        humedad_cps:       cffCol(IDX_HUMEDAD_CPS),
+        kg_disponibles:    cffCol(IDX_KG_DISP),
+      }
+
+      // Poblar estados de inputs con valores actuales del Sheet
+      setKgBrutos(ps.kg_brutos)
+      setMuestras(ps.muestras)
+      setHumedad(ps.humedad_cps)
+      savedPostSecado.current = {
+        kgBrutos: ps.kg_brutos,
+        muestras: ps.muestras,
+        humedad:  ps.humedad_cps,
+      }
+      // Resetear feedback de guardado al recargar
+      setGuardadoOk(false)
+      setErrorGuardado(null)
+
       setBache({
-        fecha_entrada: cff[0] || '',
-        fecha_cosecha: cff[1] || '',
-        remision: cff[2] || '',
-        numero: cff[3] || '',
-        proveedor: cff[4] || '',
-        programa: cff[5] || '',
-        proceso: cff[7] || '',
-        variedad: cff[8] || '',
-        kg_ccf: cff[9] || '',
-        destino: cff[10] || '',
-        estado: cff[11] || '',
-        origen: origenDeBache(numero, cff[4] || ''),
+        fecha_entrada: cffCol(IDX_FECHA_ENT),
+        fecha_cosecha: cffCol(IDX_FECHA_COS),
+        remision:      cffCol(IDX_REMISION),
+        numero:        cffCol(IDX_NUMERO),
+        proveedor:     cffCol(IDX_PROVEEDOR),
+        programa:      cffCol(IDX_PROGRAMA),
+        proceso:       cffCol(IDX_PROCESO),
+        variedad:      cffCol(IDX_VARIEDAD),
+        kg_ccf:        cffCol(IDX_KG_CCF),
+        destino:       cffCol(IDX_DESTINO),
+        estado:        cffCol(IDX_ESTADO),
+        origen: origenDeBache(numero, cffCol(IDX_PROVEEDOR)),
         af: af_row ? construirFichaAF(af_row) : null,
         as: as_row ? construirFichaAS(as_row) : null,
         mxv: mxv_row ? {
           nanolote: nanolote_asignado,
           combina_con: mxv_row[23],
         } : null,
+        postSecado: ps,
       })
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error')
@@ -314,6 +496,22 @@ export default function DetalleBache() {
           { label: 'Destino',        value: bache.destino },
         ]} />
       </section>
+
+      {/* Datos post-secado (CFF cols M-S) */}
+      <SeccionPostSecado
+        data={bache.postSecado}
+        kgBrutos={kgBrutos}
+        muestras={muestras}
+        humedad={humedad}
+        onKgBrutos={setKgBrutos}
+        onMuestras={setMuestras}
+        onHumedad={setHumedad}
+        onGuardar={guardarPostSecado}
+        guardando={guardando}
+        guardadoOk={guardadoOk}
+        errorGuardado={errorGuardado}
+        hayCambios={haycambiosSinGuardar}
+      />
 
       {/* AF FICHA COMPLETA si existe */}
       {bache.af && (
@@ -426,6 +624,154 @@ function DataGrid({ items }: { items: Array<{ label: string; value?: string; big
         </div>
       ))}
     </div>
+  )
+}
+
+interface SeccionPostSecadoProps {
+  data: PostSecadoData
+  // Campos controlados — manuales
+  kgBrutos: string
+  muestras: string
+  humedad: string
+  onKgBrutos: (v: string) => void
+  onMuestras: (v: string) => void
+  onHumedad: (v: string) => void
+  // Acciones
+  onGuardar: () => void
+  guardando: boolean
+  guardadoOk: boolean
+  errorGuardado: string | null
+  hayCambios: boolean
+}
+
+function SeccionPostSecado({
+  data,
+  kgBrutos, muestras, humedad,
+  onKgBrutos, onMuestras, onHumedad,
+  onGuardar, guardando, guardadoOk, errorGuardado, hayCambios,
+}: SeccionPostSecadoProps) {
+  // Auto-calculados: solo los que tienen valor
+  const autoCalculados: Array<{ label: string; value: string; unit?: string; big?: boolean }> = [
+    { label: 'Sacos',            value: data.sacos                                },
+    { label: 'KG Disp. CCS/CPS', value: data.kg_disp_ccs_cps,  unit: 'kg'        },
+    { label: 'FC CPS/CCS',       value: data.factor_conversion                   },
+    { label: 'KG Disponibles',   value: data.kg_disponibles,    unit: 'kg', big: true },
+  ]
+
+  return (
+    <section className="card bd-postsec">
+      <h2 className="bd-postsec-titulo">Datos post-secado</h2>
+
+      {/* ── Bloque 1: Datos manuales ─────────────────────────────────── */}
+      <div className="bd-postsec-bloque bd-postsec-bloque--manual">
+        <h3 className="bd-postsec-sub">Datos manuales (post-secado)</h3>
+        <div className="bd-postsec-inputs">
+
+          {/* KG CPS/CCS Brutos */}
+          <div className="bd-postsec-input-grupo">
+            <label className="bd-postsec-label" htmlFor="ps-kg-brutos">
+              KG CPS/CCS Brutos
+            </label>
+            <div className="bd-postsec-input-wrap">
+              <input
+                id="ps-kg-brutos"
+                type="number"
+                step="0.1"
+                min="0"
+                className="bd-postsec-input"
+                value={kgBrutos}
+                onChange={e => onKgBrutos(e.target.value)}
+                placeholder="0.0"
+                aria-label="KG CPS/CCS Brutos"
+              />
+              <span className="bd-postsec-unit">kg</span>
+            </div>
+          </div>
+
+          {/* Muestras */}
+          <div className="bd-postsec-input-grupo">
+            <label className="bd-postsec-label" htmlFor="ps-muestras">
+              Muestras
+            </label>
+            <div className="bd-postsec-input-wrap">
+              <input
+                id="ps-muestras"
+                type="number"
+                step="0.1"
+                min="0"
+                className="bd-postsec-input"
+                value={muestras}
+                onChange={e => onMuestras(e.target.value)}
+                placeholder="0.0"
+                aria-label="Muestras"
+              />
+              <span className="bd-postsec-unit">kg</span>
+            </div>
+          </div>
+
+          {/* Humedad CPS/CCS */}
+          <div className="bd-postsec-input-grupo">
+            <label className="bd-postsec-label" htmlFor="ps-humedad">
+              Humedad CPS/CCS
+            </label>
+            <div className="bd-postsec-input-wrap">
+              <input
+                id="ps-humedad"
+                type="number"
+                step="0.1"
+                min="0"
+                max="100"
+                className="bd-postsec-input"
+                value={humedad}
+                onChange={e => onHumedad(e.target.value)}
+                placeholder="0.0"
+                aria-label="Humedad CPS/CCS"
+              />
+              <span className="bd-postsec-unit">%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Feedback de guardado */}
+        {errorGuardado && (
+          <p className="bd-postsec-error" role="alert">{errorGuardado}</p>
+        )}
+        {guardadoOk && !hayCambios && (
+          <p className="bd-postsec-ok">Datos guardados correctamente.</p>
+        )}
+
+        <div className="bd-postsec-actions">
+          <button
+            className="btn btn-primary"
+            onClick={onGuardar}
+            disabled={guardando || !hayCambios}
+            aria-label="Guardar datos post-secado"
+          >
+            {guardando
+              ? <><Loader2 className="spin" size={16} /> Guardando…</>
+              : <><Save size={16} /> Guardar datos post-secado</>}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Bloque 2: Auto-calculados ────────────────────────────────── */}
+      <div className="bd-postsec-bloque bd-postsec-bloque--auto">
+        <h3 className="bd-postsec-sub">Auto-calculados por fórmula</h3>
+        <div className="bd-postsec-grid">
+          {autoCalculados.map((c, i) => (
+            <div key={i} className={`bd-postsec-campo${c.big ? ' bd-postsec-campo--big' : ''}`}>
+              <span className="bd-postsec-badge-auto">Auto</span>
+              <span className="bd-postsec-label">{c.label}</span>
+              <span className="bd-postsec-valor">
+                {c.value
+                  ? `${c.value}${c.unit ? ' ' + c.unit : ''}`
+                  : '—'}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   )
 }
 

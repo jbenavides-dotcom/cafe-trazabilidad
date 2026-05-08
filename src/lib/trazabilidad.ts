@@ -222,6 +222,19 @@ export function clasificarSCA(total: number): { label: string; tone: 'green'|'ta
 // ─── Acciones sobre baches ───
 
 /**
+ * Encuentra la fila real del bache en CFF (1-indexed, listo para usar en rangos).
+ * CFF col D (número de bache) tiene datos desde fila 5.
+ * Exportado para que componentes que necesiten escribir varias columnas
+ * puedan reusar la búsqueda sin duplicarla.
+ */
+export async function findCFFRow(numero_bache: string): Promise<number> {
+  const codigos = await readRange(SHEET_2026_ID, 'CFF!D5:D200')
+  const idx = codigos.findIndex(r => r[0]?.trim() === numero_bache)
+  if (idx < 0) throw new Error(`Bache ${numero_bache} no encontrado en CFF`)
+  return idx + 5
+}
+
+/**
  * Cambia el estado de un bache en CFF!L.
  * Cambiar a "Entregado a Analisis" dispara la propagación a AF + AS
  * (vía fórmulas VLOOKUP en col C, D de AF y AS).
@@ -232,10 +245,7 @@ export async function cambiarEstadoBache(
   numero_bache: string,
   nuevo_estado: EstadoBache,
 ): Promise<number> {
-  const codigos = await readRange(SHEET_2026_ID, 'CFF!D5:D200')
-  const idx = codigos.findIndex(r => r[0]?.trim() === numero_bache)
-  if (idx < 0) throw new Error(`Bache ${numero_bache} no encontrado en CFF`)
-  const row = idx + 5
+  const row = await findCFFRow(numero_bache)
   await writeRange(SHEET_2026_ID, `CFF!L${row}`, [[nuevo_estado]])
   return row
 }

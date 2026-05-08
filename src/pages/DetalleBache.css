@@ -427,3 +427,174 @@
 
 .ficha-perfil-macro, .ficha-perfil-notas { margin: 0.5rem 0; color: var(--color-navy); }
 .ficha-perfil-macro strong, .ficha-perfil-notas strong { color: var(--color-tan); }
+
+/* ─── Sección Post-Secado ─── */
+.bd-postsec-titulo {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Sub-secciones dentro de post-secado */
+.bd-postsec-bloque {
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.bd-postsec-bloque--manual {
+  background: #fef9f0;
+  border: 2px solid var(--color-tan);
+}
+
+.bd-postsec-bloque--auto {
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-light);
+}
+
+.bd-postsec-sub {
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  color: var(--color-navy);
+  margin-bottom: var(--spacing-md);
+  font-weight: 600;
+}
+
+/* Grid de inputs manuales */
+.bd-postsec-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.bd-postsec-input-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bd-postsec-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.bd-postsec-input {
+  flex: 1;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--color-gray-light);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-family: var(--font-serif);
+  color: var(--color-navy);
+  background: var(--color-white);
+  min-width: 0;
+  transition: border-color 0.15s;
+}
+
+.bd-postsec-input:focus {
+  outline: none;
+  border-color: var(--color-tan);
+  box-shadow: 0 0 0 2px rgba(176, 141, 87, 0.2);
+}
+
+.bd-postsec-unit {
+  font-size: 0.8rem;
+  color: var(--color-gray-medium);
+  white-space: nowrap;
+  min-width: 20px;
+}
+
+/* Mensajes de feedback */
+.bd-postsec-error {
+  color: var(--color-brand-red);
+  font-size: 0.85rem;
+  margin: 0 0 var(--spacing-sm);
+  padding: 0.5rem 0.7rem;
+  background: rgba(193, 0, 74, 0.07);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-brand-red);
+}
+
+.bd-postsec-ok {
+  color: var(--color-state-aprobado);
+  font-size: 0.85rem;
+  margin: 0 0 var(--spacing-sm);
+  padding: 0.5rem 0.7rem;
+  background: rgba(45, 106, 79, 0.08);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-state-aprobado);
+}
+
+.bd-postsec-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Grid de auto-calculados (solo lectura) */
+.bd-postsec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.bd-postsec-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bd-postsec-campo--big {
+  grid-column: span 2;
+}
+
+/* Badge "Auto" sobre el label */
+.bd-postsec-badge-auto {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-gray-medium);
+  background: var(--color-gray-light);
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-bottom: 2px;
+  width: fit-content;
+}
+
+.bd-postsec-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--color-gray-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bd-postsec-valor {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-navy);
+}
+
+.bd-postsec-campo--big .bd-postsec-valor {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  color: var(--color-tan);
+}
+
+@media (max-width: 600px) {
+  .bd-postsec-inputs {
+    grid-template-columns: 1fr 1fr;
+  }
+  .bd-postsec-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .bd-postsec-campo--big {
+    grid-column: span 2;
+  }
+}

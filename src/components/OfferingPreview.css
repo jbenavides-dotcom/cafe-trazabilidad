@@ -1,0 +1,468 @@
+/* ─── OfferingPreview — replica pixel-perfect el PDF Offering List ─── */
+
+@import url('https://fonts.googleapis.com/css2?family=Allura&family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Pinyon+Script&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&display=swap');
+
+/* ── Tokens CSS — fichas ML: definidos en src/index.css :root ──────────────── */
+/* No duplicar aquí — consumir var(--ml-*) directamente */
+
+/* ── Wrapper externo ────────────────────────────────────────────────────────── */
+.op-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm, 0.5rem);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.op-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-gray-medium, #888);
+  font-weight: 600;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--color-gray-light, #eee);
+  flex-shrink: 0;
+}
+
+/* ── Contenedor de páginas apiladas ─────────────────────────────────────────── */
+.op-pages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+}
+
+/* ── Página genérica ─────────────────────────────────────────────────────────── */
+.op-page {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  position: relative;
+  font-family: 'Playfair Display', serif;
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════════════════════════
+   PÁGINA COVER
+   ════════════════════════════════════════════════════════════ */
+.op-cover {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Zona fucsia superior (≈60%) */
+.op-cover-top {
+  background-color: #B30055;
+  flex: 0 0 60%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6% 8%;
+  position: relative;
+}
+
+.op-cover-brand {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(0.45rem, 1.4vw, 0.75rem);
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.75);
+  text-transform: uppercase;
+  font-weight: 400;
+  margin-bottom: 3%;
+  text-align: center;
+}
+
+/* "FromTheheart" tipográfico — replica el lockup del PDF */
+.op-cover-from-the-heart {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 4%;
+  line-height: 1;
+  flex-wrap: wrap;
+}
+
+.op-cover-fth-from {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: clamp(1.1rem, 4vw, 2.1rem);
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.op-cover-fth-the {
+  font-family: 'Playfair Display', serif;
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(0.75rem, 2.6vw, 1.4rem);
+  color: #ffffff;
+  margin: 0 0.1em;
+}
+
+.op-cover-fth-heart {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-style: italic;
+  font-size: clamp(1.1rem, 4vw, 2.1rem);
+  color: #ffffff;
+}
+
+/* "Offering List" serif semitransparente */
+.op-cover-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: clamp(1.2rem, 4.5vw, 2.4rem);
+  color: rgba(255, 200, 220, 0.75);
+  text-align: center;
+  line-height: 1.1;
+}
+
+/* Banda rosa #FF8FB7 */
+.op-cover-band {
+  height: 3.5%;
+  background-color: #FF8FB7;
+  flex-shrink: 0;
+}
+
+/* Zona crema inferior */
+.op-cover-bottom {
+  background-color: #FAF6EE;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6% 8% 4%;
+}
+
+.op-cover-tagline {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: clamp(0.75rem, 2.5vw, 1.3rem);
+  color: #B30055;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.op-cover-footer {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.op-cover-footer-item {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(0.4rem, 1.2vw, 0.65rem);
+  color: #B30055;
+  font-weight: 700;
+}
+
+/* ════════════════════════════════════════════════════════════
+   PÁGINA DESCRIPCIÓN
+   ════════════════════════════════════════════════════════════ */
+.op-desc {
+  background-color: #FAF6EE;
+  display: flex;
+  flex-direction: column;
+}
+
+.op-desc-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8% 9% 4%;
+  gap: 0;
+}
+
+/* Logo imagen en página descripción */
+.op-desc-logo-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 5%;
+  width: 100%;
+}
+
+/* Párrafos de descripción */
+.op-desc-para {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(0.48rem, 1.55vw, 0.82rem);
+  color: #2a2a2a;
+  text-align: center;
+  line-height: 1.55;
+  margin-bottom: 3.5%;
+  font-weight: 400;
+}
+
+/* Banda gradient inferior de la descripción */
+.op-desc-gradient {
+  height: 6%;
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════════════════════════
+   PÁGINA FICHA — anatomía nueva (guía ML)
+   ════════════════════════════════════════════════════════════ */
+
+/* Variantes de color por plantilla */
+.ml-card.v-pulse  .ml-header { background-color: var(--ml-pulse-bg); }
+.ml-card.v-beat   .ml-header { background-color: var(--ml-fth-bg); }
+.ml-card.v-connect .ml-header { background-color: var(--ml-nature-bg); }
+.ml-card.v-amistad .ml-header { background-color: var(--ml-collab-bg); }
+
+/* Contenedor de la ficha (hereda aspect-ratio de .op-page) */
+.ml-card {
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+}
+
+/* ── 1. Header colored block (≈45% altura) ──────────────────────────────────── */
+.ml-header {
+  flex: 0 0 45%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px 48px;
+}
+
+/* ── Logos imagen (reemplaza .ml-title-pulse y .ml-title-fth) ───────────────── */
+
+/* Base: negro → cream con filtro CSS */
+.ml-logo {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+  filter: brightness(0) saturate(100%) invert(96%) sepia(12%) saturate(367%) hue-rotate(346deg) brightness(102%) contrast(91%);
+}
+
+/* Tamaños por variante — header de tabla resumen */
+.ml-logo-pulse.ml-logo-header   { width: 70%; max-width: 380px; }
+.ml-logo-beat.ml-logo-header    { width: 80%; max-width: 420px; }
+.ml-logo-connect.ml-logo-header { width: 80%; max-width: 420px; }
+.ml-logo-amistad.ml-logo-header { width: 80%; max-width: 420px; }
+
+/* Tamaños en página descripción */
+.ml-logo-pulse.ml-logo-desc   { width: 65%; max-width: 340px; }
+.ml-logo-beat.ml-logo-desc    { width: 75%; max-width: 380px; }
+.ml-logo-connect.ml-logo-desc { width: 75%; max-width: 380px; }
+.ml-logo-amistad.ml-logo-desc { width: 75%; max-width: 380px; }
+
+/* En descripción el logo va sobre fondo crema: quitar filtro cream y usar color del programa */
+.op-desc-logo-wrap .ml-logo {
+  filter: none;
+  /* El SVG ya viene en negro — sobre fondo crema se ve perfecto */
+}
+
+/* Tinte de color del programa sobre el negro del logo */
+.op-desc-logo-wrap .ml-logo-pulse   { filter: invert(52%) sepia(60%) saturate(600%) hue-rotate(330deg) brightness(95%); }
+.op-desc-logo-wrap .ml-logo-beat    { filter: invert(22%) sepia(80%) saturate(800%) hue-rotate(290deg) brightness(90%); }
+.op-desc-logo-wrap .ml-logo-connect { filter: invert(42%) sepia(30%) saturate(500%) hue-rotate(220deg) brightness(85%); }
+.op-desc-logo-wrap .ml-logo-amistad { filter: invert(48%) sepia(20%) saturate(400%) hue-rotate(60deg) brightness(75%); }
+
+/* .ml-meta eliminado — Microlot y Terroir se movieron al grid del body */
+
+/* ── 2. Stripe divider — hot-pink sólida ─────────────────────────────────────── */
+.ml-stripe {
+  height: 12px;
+  background-color: var(--ml-stripe);
+  flex-shrink: 0;
+}
+
+/* ── 3. Imagery band — gradiente rosa/pétalos ────────────────────────────────── */
+.ml-imagery {
+  height: clamp(40px, 5%, 60px);
+  flex-shrink: 0;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(255,200,210,0.9), transparent 40%),
+    radial-gradient(circle at 50% 60%, rgba(255,180,200,0.95), transparent 50%),
+    radial-gradient(circle at 80% 40%, rgba(255,210,220,0.9), transparent 40%),
+    #FCE5EC;
+}
+
+/* ── 4. Body white — contiene el grid ────────────────────────────────────────── */
+.ml-body {
+  flex: 1;
+  background-color: #ffffff;
+  padding: clamp(0.5rem, 3%, 1.5rem) clamp(0.5rem, 4%, 1.5rem);
+  display: flex;
+  align-items: center;
+}
+
+/* ── 5. Grid 2×4 — 7 celdas (izquierda a derecha) ───────────────────────────── */
+.ml-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--ml-table-border);
+  border: 1px solid var(--ml-table-border);
+  width: 100%;
+}
+
+.ml-info-cell {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+.ml-info-cell.full {
+  grid-column: 1 / -1;
+}
+
+.ml-info-label {
+  background: var(--ml-table-label);
+  color: #fff;
+  text-align: center;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(0.55rem, 1.2vw, 0.85rem);
+  padding: 10px 8px;
+  line-height: 1.3;
+}
+
+.ml-info-value {
+  background: #fff;
+  color: var(--color-ink);
+  font-family: 'Inter', sans-serif;
+  padding: 14px 12px;
+  min-height: 48px;
+  font-size: clamp(0.55rem, 1.2vw, 0.95rem);
+  display: flex;
+  align-items: center;
+  line-height: 1.35;
+}
+
+.ml-info-value.notes {
+  min-height: 64px;
+  align-items: flex-start;
+}
+
+.ml-info-value.empty {
+  color: var(--color-ink-40);
+  font-style: italic;
+}
+
+/* ── 6. Bottom bar — tagline ──────────────────────────────────────────────────── */
+.ml-tagline {
+  background-color: var(--ml-bottom-bar);
+  padding: clamp(0.4rem, 2%, 0.875rem) clamp(0.5rem, 3%, 1rem);
+  text-align: center;
+  color: #000000;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: clamp(0.35rem, 1.1vw, 0.6rem);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ════════════════════════════════════════════════════════════
+   PÁGINA TABLA RESUMEN — reemplaza las fichas individuales
+   ════════════════════════════════════════════════════════════ */
+
+.ml-summary-table-wrap {
+  flex: 1;
+  padding: 16px 16px 8px;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ml-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  table-layout: fixed;
+}
+
+.ml-summary-table th {
+  background: var(--ml-table-label, #B8004C);
+  color: #fff;
+  font-weight: 500;
+  text-align: center;
+  padding: 8px 5px;
+  border: 1px solid var(--ml-table-border, #E91E83);
+  font-size: 0.72rem;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+/* Anchos de columna: # estrecha, notas ancha, resto equitativo */
+.ml-summary-table th:nth-child(1),
+.ml-summary-table td:nth-child(1) { width: 8%; }
+
+.ml-summary-table th:nth-child(2),
+.ml-summary-table td:nth-child(2) { width: 18%; }
+
+.ml-summary-table th:nth-child(3),
+.ml-summary-table td:nth-child(3) { width: 16%; }
+
+.ml-summary-table th:nth-child(4),
+.ml-summary-table td:nth-child(4) { width: 30%; }
+
+.ml-summary-table th:nth-child(5),
+.ml-summary-table td:nth-child(5) { width: 14%; }
+
+.ml-summary-table th:nth-child(6),
+.ml-summary-table td:nth-child(6) { width: 14%; }
+
+.ml-summary-table td {
+  background: #fff;
+  color: var(--color-ink, #121820);
+  padding: 6px 5px;
+  border: 1px solid var(--ml-table-border, #E91E83);
+  vertical-align: middle;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.ml-summary-table td.row-num {
+  background: var(--ml-table-label, #B8004C);
+  color: #fff;
+  font-weight: 600;
+  text-align: center;
+}
+
+.ml-summary-table td.empty {
+  color: var(--color-ink-40, rgba(18,24,32,0.35));
+}
+
+/* ── Estado vacío (sin template seleccionado) ────────────────────────────────── */
+.op-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f7f5;
+  aspect-ratio: 9 / 16;
+  border-radius: 4px;
+  border: 2px dashed #ddd;
+}
+
+.op-empty-inner {
+  text-align: center;
+  padding: 2rem;
+}
+
+.op-empty-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.3;
+}
+
+.op-empty-text {
+  font-size: 0.75rem;
+  color: var(--color-gray-medium, #888);
+  font-style: italic;
+}

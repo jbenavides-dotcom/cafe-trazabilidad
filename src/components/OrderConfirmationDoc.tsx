@@ -5,6 +5,7 @@ import { OrderConfirmationPDF } from './pdf/OrderConfirmationPDF'
 import { pdf } from '@react-pdf/renderer'
 import { saveOrderConfirmationFull } from '../lib/fichas'
 import { batchGet, SHEET_2026_ID } from '../lib/sheets'
+import { SignatureSection } from './SignatureSection'
 
 // ─── Bache disponible (AS APROBADO) ───────────────────────────────────────────
 
@@ -34,6 +35,22 @@ function fmtUSD(n: number): string {
 
 function calcTotal(items: OrderConfirmationItem[]): number {
   return items.reduce((acc, it) => acc + it.total_usd, 0)
+}
+
+function buildSummary(doc: OrderConfirmation): string {
+  const parts: string[] = []
+  if (doc.items.length === 1) {
+    parts.push(doc.items[0].description)
+    if (doc.items[0].quantity_kg) parts.push(`${doc.items[0].quantity_kg} kg`)
+  } else if (doc.items.length > 1) {
+    const totalKg = doc.items.reduce((a, i) => a + i.quantity_kg, 0)
+    parts.push(`${doc.items.length} nanolotes`)
+    parts.push(`${totalKg.toFixed(1)} kg`)
+  }
+  if (doc.total_usd > 0) parts.push(`$${fmtUSD(doc.total_usd)} USD`)
+  if (doc.incoterm) parts.push(doc.incoterm)
+  if (doc.destination_country) parts.push(doc.destination_country)
+  return parts.join(' · ')
 }
 
 // ─── Componente ────────────────────────────────────────────────────────────────
@@ -407,6 +424,19 @@ export function OrderConfirmationDoc({ doc, onChange, onSaveDraft }: Props) {
             {saving ? 'Guardando…' : 'Generar PDF'}
           </button>
         </div>
+
+        {/* ── Firma del cliente ────────────────────────────────────────────── */}
+        <SignatureSection
+          documentType="order_confirmation"
+          documentId={doc.buyer_id ? doc.id : undefined}
+          documentLabel={doc.number}
+          documentSummary={buildSummary(doc)}
+          signerHint={{
+            signer_name: doc.buyer?.contact_name,
+            signer_email: doc.buyer?.email,
+            signer_role: 'Buyer',
+          }}
+        />
       </div>
 
       {/* ── Preview derecha ── */}

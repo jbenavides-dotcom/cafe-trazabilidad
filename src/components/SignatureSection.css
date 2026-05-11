@@ -1,0 +1,248 @@
+/* SignatureSection.css */
+
+.sigsec {
+  margin-top: 28px;
+  padding: 20px;
+  border: 1px solid #E5E5E5;
+  border-radius: 12px;
+  background: #FFFFFF;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.sigsec-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.sigsec-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #2a2a2a;
+  font-family: 'Playfair Display', serif;
+}
+
+.sigsec-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+.sigsec-badge-green  { background: #DCEFDC; color: #2E7D32; }
+.sigsec-badge-orange { background: #FFE9CC; color: #B26500; }
+.sigsec-badge-red    { background: #FFE2E2; color: #C0392B; }
+.sigsec-badge-gray   { background: #EEE; color: #777; }
+
+.sigsec-help {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
+.sigsec-error {
+  background: #FFEBEE;
+  border: 1px solid #EF9A9A;
+  color: #C0392B;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin: 8px 0;
+}
+
+/* ── Botones ─────────────────────────────────────────────────── */
+.sigsec-btn-share,
+.sigsec-btn-regen {
+  background: #B30055;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.sigsec-btn-share:hover:not(:disabled),
+.sigsec-btn-regen:hover:not(:disabled) { opacity: 0.92; }
+.sigsec-btn-share:disabled,
+.sigsec-btn-regen:disabled { background: #BBB; cursor: not-allowed; }
+
+.sigsec-btn-regen {
+  background: transparent;
+  color: #B30055;
+  border: 1.5px solid #B30055;
+  margin-top: 10px;
+  padding: 7px 14px;
+  font-size: 13px;
+}
+
+/* ── Estado pending — link copiable ──────────────────────────── */
+.sigsec-pending {
+  background: #FFF8EC;
+  border-color: #FFD48A;
+}
+.sigsec-link-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.sigsec-link-input {
+  flex: 1;
+  padding: 9px 12px;
+  border: 1px solid #DDD;
+  border-radius: 8px;
+  font-family: 'Inter', monospace;
+  font-size: 12px;
+  background: #FFF;
+  color: #444;
+}
+.sigsec-btn-copy {
+  background: #2a2a2a;
+  color: white;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sigsec-btn-copy:hover { background: #444; }
+
+.sigsec-copy-msg {
+  font-size: 12px;
+  color: #2E7D32;
+  margin-bottom: 8px;
+}
+
+.sigsec-pending-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  color: #666;
+  margin: 10px 0;
+}
+
+/* ── Envío por correo ── */
+.sigsec-email-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  margin-bottom: 6px;
+}
+.sigsec-email-input {
+  flex: 1;
+  padding: 9px 12px;
+  border: 1px solid #DDD;
+  border-radius: 8px;
+  font-size: 13px;
+  background: white;
+}
+.sigsec-email-input:focus {
+  outline: none;
+  border-color: #B30055;
+}
+.sigsec-btn-send {
+  background: #B30055;
+  color: white;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sigsec-btn-send:hover:not(:disabled) { opacity: 0.92; }
+.sigsec-btn-send:disabled { background: #BBB; cursor: not-allowed; }
+
+.sigsec-email-msg {
+  font-size: 12px;
+  margin: 4px 0 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+.sigsec-email-ok  { background: #DCEFDC; color: #2E7D32; }
+.sigsec-email-err { background: #FFEBEE; color: #C0392B; }
+
+/* ── Estado signed — firma + metadata ────────────────────────── */
+.sigsec-signed {
+  background: #F1F8F1;
+  border-color: #C3E0C3;
+}
+.sigsec-signed-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 720px) {
+  .sigsec-signed-grid { grid-template-columns: 1fr; }
+}
+
+.sigsec-signed-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sigsec-meta-row {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 10px;
+  font-size: 13px;
+}
+.sigsec-meta-label {
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 11px;
+}
+.sigsec-meta-value { color: #2a2a2a; }
+.sigsec-meta-mono { font-family: 'Inter', monospace; font-size: 12px; }
+.sigsec-legal-note {
+  margin-top: 6px;
+  grid-template-columns: 1fr;
+  border-top: 1px dashed #C3E0C3;
+  padding-top: 8px;
+  color: #6B8A6B;
+}
+
+.sigsec-signed-image {
+  background: white;
+  border: 1px solid #E5E5E5;
+  border-radius: 8px;
+  padding: 12px;
+}
+.sigsec-img-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #888;
+  margin-bottom: 6px;
+}
+.sigsec-img {
+  width: 100%;
+  height: auto;
+  max-height: 160px;
+  object-fit: contain;
+  display: block;
+}
+.sigsec-img-missing {
+  font-size: 13px;
+  color: #999;
+  font-style: italic;
+  padding: 20px;
+  text-align: center;
+}
+
+/* ── Estados negativos ───────────────────────────────────────── */
+.sigsec-declined { background: #FFF5F5; border-color: #FFCDD2; }
+.sigsec-expired  { background: #FFF8EC; border-color: #FFD48A; }

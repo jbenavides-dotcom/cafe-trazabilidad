@@ -1,0 +1,248 @@
+/* SignPublic.css — firma digital pública */
+
+.sp-shell {
+  min-height: 100vh;
+  background: #FAF6EE;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #2a2a2a;
+  padding-bottom: 60px;
+}
+
+.sp-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  color: #B30055;
+  font-size: 17px;
+}
+
+/* ── Cards de estado (error/success) ────────────────────────── */
+.sp-card {
+  max-width: 540px;
+  margin: 80px auto;
+  padding: 48px 40px;
+  background: white;
+  border-radius: 14px;
+  text-align: center;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.08);
+}
+
+.sp-error h1 { color: #B30055; font-family: 'Playfair Display', serif; margin-bottom: 18px; }
+.sp-error p { line-height: 1.55; color: #444; }
+
+.sp-success { border: 3px solid #4CAF50; }
+.sp-success-check {
+  width: 76px; height: 76px;
+  border-radius: 50%;
+  background: #4CAF50;
+  color: white;
+  font-size: 42px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 24px;
+}
+.sp-success h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 30px;
+  margin-bottom: 20px;
+}
+.sp-success p { line-height: 1.6; margin-bottom: 12px; }
+.sp-doc-name {
+  background: #FAF6EE;
+  padding: 12px 18px;
+  border-radius: 8px;
+  margin: 18px 0 !important;
+  font-weight: 600;
+  color: #B30055;
+}
+.sp-success-foot {
+  font-size: 13px;
+  color: #666;
+  margin-top: 24px !important;
+  padding-top: 18px;
+  border-top: 1px solid #EAE5DC;
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+.sp-header {
+  background: #B30055;
+  color: white;
+  padding: 44px 24px 36px;
+  text-align: center;
+}
+.sp-brand {
+  font-size: 11px;
+  letter-spacing: 3px;
+  opacity: 0.75;
+  margin-bottom: 14px;
+}
+.sp-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 44px;
+  margin: 0 0 12px;
+  font-weight: 700;
+  color: #FAF6EE;
+}
+.sp-doc-label {
+  font-size: 15px;
+  opacity: 0.9;
+  padding: 8px 18px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  display: inline-block;
+}
+
+/* ── Form ────────────────────────────────────────────────────── */
+.sp-form {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.sp-section {
+  background: white;
+  margin-top: 24px;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+.sp-section h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  margin: 0 0 18px;
+  color: #2a2a2a;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #F36AAB;
+}
+
+.sp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.sp-field { display: flex; flex-direction: column; gap: 6px; }
+.sp-field-wide { grid-column: 1 / -1; }
+.sp-field span { font-size: 13px; font-weight: 600; color: #666; }
+.sp-field input {
+  padding: 10px 12px;
+  border: 1.5px solid #E5E5E5;
+  border-radius: 8px;
+  font-size: 15px;
+}
+.sp-field input:focus {
+  outline: none;
+  border-color: #B30055;
+}
+
+@media (max-width: 600px) {
+  .sp-grid { grid-template-columns: 1fr; }
+  .sp-title { font-size: 34px; }
+  .sp-canvas { height: 180px; }
+}
+
+/* ── Canvas firma ────────────────────────────────────────────── */
+.sp-canvas-wrap {
+  position: relative;
+  border: 2px dashed #B30055;
+  border-radius: 10px;
+  background: white;
+  height: 220px;
+  overflow: hidden;
+}
+.sp-canvas {
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+  display: block;
+}
+.sp-canvas-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: #B30055;
+  opacity: 0.4;
+  font-style: italic;
+  font-size: 15px;
+}
+.sp-canvas-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+.sp-btn-ghost {
+  background: transparent;
+  border: 1px solid #B30055;
+  color: #B30055;
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.sp-btn-ghost:hover { background: #B30055; color: white; }
+
+/* ── Legal checkbox ──────────────────────────────────────────── */
+.sp-legal {
+  background: #FFF8E1;
+  border: 1px solid #FFE082;
+}
+.sp-check {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  cursor: pointer;
+  line-height: 1.55;
+  font-size: 14px;
+  color: #444;
+}
+.sp-check input { margin-top: 4px; flex-shrink: 0; }
+.sp-check strong { color: #B30055; }
+
+/* ── Submit ──────────────────────────────────────────────────── */
+.sp-submit-bar {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+.sp-err-msg {
+  background: #FFEBEE;
+  border: 1px solid #EF9A9A;
+  color: #C0392B;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.sp-btn-primary {
+  background: #B30055;
+  color: white;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.sp-btn-primary:hover:not(:disabled) { opacity: 0.92; }
+.sp-btn-primary:disabled {
+  background: #BBB;
+  cursor: not-allowed;
+}
+
+/* ── Footer brand ────────────────────────────────────────────── */
+.sp-foot {
+  max-width: 720px;
+  margin: 36px auto 0;
+  padding: 18px 24px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #B30055;
+  border-top: 1px solid #F5E5EB;
+}

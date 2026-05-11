@@ -89,6 +89,7 @@ interface TplConfig {
   headerBg: string
   scriptColor: string
   footerTagline: string
+  footerTextColor: string
   useScriptHeader: boolean
   descParas: string[]
 }
@@ -98,6 +99,7 @@ const TPL_CFG: Record<Offering['template_code'], TplConfig> = {
     headerBg: C.pulseHeader,
     scriptColor: C.pulseScript,
     footerTagline: 'Daring fermentations with precision and control.',
+    footerTextColor: '#FFFFFF',
     useScriptHeader: true,
 
     descParas: [
@@ -112,6 +114,7 @@ const TPL_CFG: Record<Offering['template_code'], TplConfig> = {
     headerBg: C.beatHeader,
     scriptColor: C.beatScript,
     footerTagline: 'Coffees crafted for competition.',
+    footerTextColor: '#000000',
     useScriptHeader: false,
 
     descParas: [
@@ -125,6 +128,7 @@ const TPL_CFG: Record<Offering['template_code'], TplConfig> = {
     headerBg: C.connectHeader,
     scriptColor: C.connectScript,
     footerTagline: 'Nature leads, we follow.',
+    footerTextColor: '#000000',
     useScriptHeader: false,
 
     descParas: [
@@ -138,6 +142,7 @@ const TPL_CFG: Record<Offering['template_code'], TplConfig> = {
     headerBg: C.amistadHeader,
     scriptColor: C.amistadScript,
     footerTagline: 'Coffees rooted in collaboration',
+    footerTextColor: '#000000',
     useScriptHeader: false,
 
     descParas: [
@@ -728,9 +733,9 @@ export function OfferingPDF({ offering }: { offering: Offering }) {
           </View>
         </View>
 
-        {/* 5. Bottom bar — tagline */}
+        {/* 5. Bottom bar — tagline (color de texto por plantilla) */}
         <View style={S.fichaFooter}>
-          <Text style={S.fichaFooterText}>{cfg.footerTagline}</Text>
+          <Text style={[S.fichaFooterText, { color: cfg.footerTextColor }]}>{cfg.footerTagline}</Text>
         </View>
       </Page>
     </Document>

@@ -304,6 +304,472 @@ export async function deleteOffering(id: string): Promise<void> {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// PÁGINA PÚBLICA — selección del cliente por access_token
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ClientSelectionInput {
+  sample_order: number
+  selected: boolean
+  requested_kg?: number
+  priority?: 1 | 2 | 3
+  client_notes?: string
+}
+
+/**
+ * Envía la selección del cliente a Supabase.
+ * - Resuelve/crea el recipient por email.
+ * - Reemplaza todas las selecciones previas de ese recipient para ese offering.
+ * - Marca recipient.funnel_stage='responded' + replied_at.
+ *
+ * Devuelve el id del recipient para que la UI pueda confirmar.
+ */
+export async function submitClientSelection(
+  accessToken: string,
+  clientEmail: string,
+  clientName: string,
+  selections: ClientSelectionInput[]
+): Promise<{ recipient_id: string; offering_id: string }> {
+  const email = clientEmail.trim().toLowerCase()
+  if (!email) throw new Error('Email requerido')
+
+  // 1. Resolver offering por token (con samples para mapear sample_order -> id)
+  const { data: offering, error: offErr } = await supabase
+    .from('ct_offerings')
+    .select('id, samples:ct_offering_samples(id, sample_order)')
+    .eq('access_token', accessToken)
+    .single()
+  if (offErr || !offering) throw new Error('Offering no encontrado')
+
+  const offeringId = offering.id as string
+  const samples = (offering.samples ?? []) as { id: string; sample_order: number }[]
+  const sampleByOrder = new Map(samples.map(s => [s.sample_order, s.id]))
+
+  // 2. Resolver recipient (existente o nuevo) por email + offering
+  let recipientId: string
+  const { data: existingRec } = await supabase
+    .from('ct_recipients')
+    .select('id')
+    .eq('offering_id', offeringId)
+    .eq('email', email)
+    .maybeSingle()
+
+  if (existingRec?.id) {
+    recipientId = existingRec.id as string
+    await supabase
+      .from('ct_recipients')
+      .update({
+        funnel_stage: 'responded',
+        replied_at: new Date().toISOString(),
+        last_viewed_at: new Date().toISOString(),
+        name: clientName || undefined,
+      })
+      .eq('id', recipientId)
+  } else {
+    const { data: newRec, error: insErr } = await supabase
+      .from('ct_recipients')
+      .insert({
+        offering_id: offeringId,
+        email,
+        name: clientName || email,
+        funnel_stage: 'responded',
+        view_count: 1,
+        replied_at: new Date().toISOString(),
+        last_viewed_at: new Date().toISOString(),
+      })
+      .select('id')
+      .single()
+    if (insErr || !newRec) throw insErr ?? new Error('No se pudo crear recipient')
+    recipientId = newRec.id as string
+  }
+
+  // 3. Borrar selecciones previas de este recipient para este offering
+  await supabase
+    .from('ct_offering_selections')
+    .delete()
+    .eq('offering_id', offeringId)
+    .eq('recipient_id', recipientId)
+
+  // 4. Insertar selecciones nuevas (solo las que selected=true)
+  const rows = selections
+    .filter(s => s.selected && sampleByOrder.has(s.sample_order))
+    .map(s => ({
+      offering_id: offeringId,
+      sample_id: sampleByOrder.get(s.sample_order)!,
+      recipient_id: recipientId,
+      selected: true,
+      requested_kg: s.requested_kg ?? null,
+      priority: s.priority ?? 2,
+      client_notes: s.client_notes ?? null,
+    }))
+
+  if (rows.length > 0) {
+    const { error: selErr } = await supabase.from('ct_offering_selections').insert(rows)
+    if (selErr) throw selErr
+  }
+
+  // 5. Promover status del offering a 'responded' si aún está en 'sent'/'viewed'
+  await supabase
+    .from('ct_offerings')
+    .update({ status: 'responded' })
+    .eq('id', offeringId)
+    .in('status', ['draft', 'sent', 'viewed'])
+
+  return { recipient_id: recipientId, offering_id: offeringId }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FIRMA DIGITAL — /sign/:token
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type SignatureDocumentType = 'order_confirmation' | 'shipping' | 'trip_to_origin'
+
+export interface PendingSignatureRecord {
+  id: string
+  signature_token: string
+  document_type: SignatureDocumentType
+  document_id: string
+  status: 'pending' | 'signed' | 'declined' | 'expired'
+  signer_name?: string
+  signer_email?: string
+  signer_role?: string
+  expires_at?: string
+  /** Snippet del documento para mostrar al firmante (cargado por lookup separado) */
+  document_label?: string
+}
+
+/**
+ * Lee la firma pendiente por su token público.
+ * También resuelve un label legible del documento (ej. "OC-2026-001 — Leaves Coffee").
+ */
+export async function getSignatureByToken(token: string): Promise<PendingSignatureRecord | null> {
+  try {
+    const { data, error } = await supabase
+      .from('ct_digital_signatures')
+      .select('*')
+      .eq('signature_token', token)
+      .single()
+    if (error || !data) return null
+
+    // Resolver label del documento
+    let docLabel: string | undefined
+    if (data.document_type === 'order_confirmation') {
+      const { data: oc } = await supabase
+        .from('ct_order_confirmations')
+        .select('confirmation_number, buyer:ct_buyers(company_name)')
+        .eq('id', data.document_id)
+        .single()
+      const buyerName = (oc?.buyer as unknown as { company_name?: string } | null)?.company_name
+      docLabel = oc ? `${oc.confirmation_number}${buyerName ? ` — ${buyerName}` : ''}` : undefined
+    } else if (data.document_type === 'shipping') {
+      const { data: sh } = await supabase
+        .from('ct_shipping_documents')
+        .select('contract_number, mode')
+        .eq('id', data.document_id)
+        .single()
+      docLabel = sh ? `Shipping ${sh.mode === 'air' ? 'Aéreo' : 'Marítimo'} — ${sh.contract_number}` : undefined
+    } else if (data.document_type === 'trip_to_origin') {
+      const { data: tr } = await supabase
+        .from('ct_trip_to_origin')
+        .select('client_name, trip_date')
+        .eq('id', data.document_id)
+        .single()
+      docLabel = tr ? `Trip to Origin — ${tr.client_name} (${tr.trip_date})` : undefined
+    }
+
+    return {
+      id: data.id,
+      signature_token: data.signature_token,
+      document_type: data.document_type,
+      document_id: data.document_id,
+      status: data.status,
+      signer_name: data.signer_name ?? undefined,
+      signer_email: data.signer_email ?? undefined,
+      signer_role: data.signer_role ?? undefined,
+      expires_at: data.expires_at ?? undefined,
+      document_label: docLabel,
+    }
+  } catch (e) {
+    console.error('getSignatureByToken error:', e)
+    return null
+  }
+}
+
+export interface SignatureSubmitInput {
+  signer_name: string
+  signer_email: string
+  signer_role?: string
+  signature_image_data_url: string  // dataURL base64 PNG del canvas
+  /** Hash del payload firmado (texto canónico signer+token+timestamp) */
+  document_hash_sha256: string
+}
+
+/**
+ * Marca la firma como completada. Captura IP (best-effort) + user agent.
+ * Actualiza también el documento origen (signed_at + signature_id).
+ */
+export async function submitSignature(
+  token: string,
+  input: SignatureSubmitInput
+): Promise<{ signature_id: string }> {
+  // 1. Buscar el registro
+  const { data: sig, error: lookupErr } = await supabase
+    .from('ct_digital_signatures')
+    .select('id, document_type, document_id, status, expires_at')
+    .eq('signature_token', token)
+    .single()
+  if (lookupErr || !sig) throw new Error('Token de firma inválido o expirado')
+  if (sig.status === 'signed') throw new Error('Este documento ya fue firmado')
+  if (sig.expires_at && new Date(sig.expires_at) < new Date()) {
+    throw new Error('Este enlace expiró. Solicita uno nuevo a La Palma y El Tucán.')
+  }
+
+  // 2. IP best-effort (ipify gratis, sin auth)
+  let signed_ip: string | null = null
+  try {
+    const r = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(3000) })
+    const j = await r.json()
+    signed_ip = j.ip ?? null
+  } catch { /* sin IP — no es crítico */ }
+
+  // 3. UPDATE firma
+  const now = new Date().toISOString()
+  const { error: updErr } = await supabase
+    .from('ct_digital_signatures')
+    .update({
+      status: 'signed',
+      signer_name: input.signer_name,
+      signer_email: input.signer_email.trim().toLowerCase(),
+      signer_role: input.signer_role ?? null,
+      signature_image_url: input.signature_image_data_url,
+      document_hash_sha256: input.document_hash_sha256,
+      signed_at: now,
+      signed_ip,
+      signed_user_agent: navigator.userAgent.slice(0, 512),
+    })
+    .eq('id', sig.id)
+  if (updErr) throw updErr
+
+  // 4. UPDATE documento origen (marcar como firmado).
+  //    Las tres tablas tienen `status` + `updated_at` (NO `signed_at`).
+  //    El timestamp queda registrado en ct_digital_signatures.signed_at.
+  if (sig.document_type === 'order_confirmation') {
+    const { error: ocErr } = await supabase
+      .from('ct_order_confirmations')
+      .update({ status: 'signed' })
+      .eq('id', sig.document_id)
+    if (ocErr) console.warn('UPDATE ct_order_confirmations falló:', ocErr.message)
+  } else if (sig.document_type === 'shipping') {
+    const { error: shErr } = await supabase
+      .from('ct_shipping_documents')
+      .update({ status: 'signed' })
+      .eq('id', sig.document_id)
+    if (shErr) console.warn('UPDATE ct_shipping_documents falló:', shErr.message)
+  } else if (sig.document_type === 'trip_to_origin') {
+    const { error: trErr } = await supabase
+      .from('ct_trip_to_origin')
+      .update({ status: 'signed', contract_signed: true })
+      .eq('id', sig.document_id)
+    if (trErr) console.warn('UPDATE ct_trip_to_origin falló:', trErr.message)
+  }
+
+  return { signature_id: sig.id }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENVÍO DE EMAIL — webhook n8n
+// ─────────────────────────────────────────────────────────────────────────────
+
+const N8N_EMAIL_WEBHOOK = 'https://jhona.app.n8n.cloud/webhook/send-sig-email'
+
+export interface SignatureEmailInput {
+  to: string
+  signer_name?: string
+  document_label: string       // ej. "OC-2026-1031"
+  document_summary: string     // ej. "Geisha LP&ET · 38.5 kg · $4,116.58 USD · DAP Colombia"
+  sign_url: string
+}
+
+/**
+ * Envía email transaccional al cliente con el link de firma.
+ * Llama al webhook n8n (workflow "Send Signature Email — Café Trazabilidad").
+ */
+export async function sendSignatureEmail(input: SignatureEmailInput): Promise<void> {
+  const html = renderSignatureEmailHtml(input)
+  const subject = `Documento para firmar · ${input.document_label} · La Palma y El Tucán`
+
+  const r = await fetch(N8N_EMAIL_WEBHOOK, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ to: input.to, subject, html }),
+  })
+  if (!r.ok) {
+    const errBody = await r.text().catch(() => '')
+    throw new Error(`Webhook respondió ${r.status}: ${errBody.slice(0, 200)}`)
+  }
+}
+
+function renderSignatureEmailHtml(i: SignatureEmailInput): string {
+  const safeName = i.signer_name?.trim() || 'estimado cliente'
+  return `
+<div style="max-width:600px;margin:0 auto;font-family:Inter,Arial,sans-serif;background:#FAF6EE;border-radius:14px;overflow:hidden">
+  <div style="background:#B30055;padding:36px 24px;text-align:center;color:white">
+    <div style="font-size:11px;letter-spacing:3px;opacity:0.7;margin-bottom:10px">LA PALMA &amp; EL TUC&Aacute;N</div>
+    <h1 style="margin:0;font-size:36px;font-family:Georgia,serif">From <em>The</em> heart</h1>
+    <p style="margin:16px 0 0;font-size:15px;opacity:0.92">Tienes un documento listo para firmar</p>
+  </div>
+  <div style="padding:32px 28px;background:white">
+    <p style="font-size:16px;line-height:1.6;color:#2a2a2a">Hola <strong>${escapeHtml(safeName)}</strong>,</p>
+    <p style="font-size:15px;line-height:1.6;color:#444">
+      Hemos preparado tu <strong>Order Confirmation</strong>. Por favor revisa los detalles y firma digitalmente cuando est&eacute;s conforme.
+    </p>
+    <div style="background:#FFF5F8;border-left:4px solid #B30055;padding:16px 18px;margin:22px 0;border-radius:6px">
+      <div style="font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px">Documento</div>
+      <div style="font-size:18px;font-weight:700;color:#B30055;margin-bottom:8px">${escapeHtml(i.document_label)}</div>
+      <div style="font-size:13px;color:#666">${escapeHtml(i.document_summary)}</div>
+    </div>
+    <div style="text-align:center;margin:30px 0">
+      <a href="${i.sign_url}" style="display:inline-block;background:#B30055;color:white;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px">
+        Revisar y firmar documento
+      </a>
+    </div>
+    <p style="font-size:12px;color:#888;line-height:1.5;margin-top:24px;border-top:1px solid #EAE5DC;padding-top:14px">
+      Este enlace es &uacute;nico, expira en 30 d&iacute;as y queda registrado conforme a la Ley 527/1999 (Colombia) sobre firma electr&oacute;nica.
+      Si no esperabas este correo, puedes ignorarlo.
+    </p>
+  </div>
+  <div style="padding:18px;text-align:center;background:#FAF6EE;font-size:12px;color:#B30055">
+    @lapalmayeltucan &middot; lapalmayeltucan.com
+  </div>
+</div>`
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/**
+ * Lee la firma más reciente (si existe) asociada a un documento.
+ * Para mostrar el estado en la UI del documento (Order Confirmation, Shipping, Trip).
+ */
+export async function getSignatureForDocument(
+  documentType: SignatureDocumentType,
+  documentId: string
+): Promise<{
+  id: string
+  signature_token: string
+  status: 'pending' | 'signed' | 'declined' | 'expired'
+  signer_name?: string
+  signer_email?: string
+  signer_role?: string
+  signature_image_url?: string
+  signed_at?: string
+  signed_ip?: string
+  expires_at?: string
+  sent_at?: string
+} | null> {
+  try {
+    const { data, error } = await supabase
+      .from('ct_digital_signatures')
+      .select('id, signature_token, status, signer_name, signer_email, signer_role, signature_image_url, signed_at, signed_ip, expires_at, sent_at')
+      .eq('document_type', documentType)
+      .eq('document_id', documentId)
+      .order('sent_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (error || !data) return null
+    return {
+      id: data.id,
+      signature_token: data.signature_token,
+      status: data.status,
+      signer_name: data.signer_name ?? undefined,
+      signer_email: data.signer_email ?? undefined,
+      signer_role: data.signer_role ?? undefined,
+      signature_image_url: data.signature_image_url ?? undefined,
+      signed_at: data.signed_at ?? undefined,
+      signed_ip: data.signed_ip ?? undefined,
+      expires_at: data.expires_at ?? undefined,
+      sent_at: data.sent_at ?? undefined,
+    }
+  } catch (e) {
+    console.error('getSignatureForDocument error:', e)
+    return null
+  }
+}
+
+/**
+ * Crea un registro `ct_digital_signatures` pendiente y devuelve la URL pública
+ * que el equipo puede compartir con el cliente.
+ *
+ * - URL construida con BASE_URL para que funcione en local + producción
+ *   (`https://jbenavides-dotcom.github.io/cafe-trazabilidad/#/sign/{token}`)
+ * - Pre-rellena signer_name/email si se proveen (útil para Order Confirmation
+ *   donde ya conocemos al buyer).
+ */
+export async function createSignatureLink(
+  documentType: SignatureDocumentType,
+  documentId: string,
+  hint?: { signer_name?: string; signer_email?: string; signer_role?: string }
+): Promise<{ token: string; signed_url: string; signature_id: string }> {
+  const { data, error } = await supabase
+    .from('ct_digital_signatures')
+    .insert({
+      document_type: documentType,
+      document_id: documentId,
+      status: 'pending',
+      signer_name: hint?.signer_name ?? null,
+      signer_email: hint?.signer_email ?? null,
+      signer_role: hint?.signer_role ?? null,
+    })
+    .select('id, signature_token')
+    .single()
+  if (error || !data) throw error ?? new Error('No se pudo crear el link de firma')
+
+  const base = `${window.location.origin}${import.meta.env.BASE_URL}`.replace(/\/$/, '/')
+  const signed_url = `${base}#/sign/${data.signature_token}`
+
+  return { token: data.signature_token, signed_url, signature_id: data.id }
+}
+
+/**
+ * Calcula SHA-256 (hex) de un string usando Web Crypto API nativa.
+ * Útil para hashear el payload firmado (signer_name + token + timestamp).
+ */
+export async function sha256Hex(text: string): Promise<string> {
+  const buf = new TextEncoder().encode(text)
+  const hash = await crypto.subtle.digest('SHA-256', buf)
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+/**
+ * Marca un offering como visto (view_count++) cuando el cliente abre el link.
+ * Idempotente — se puede llamar en cada render sin problema.
+ */
+export async function trackOfferingView(accessToken: string): Promise<void> {
+  try {
+    const { data: off } = await supabase
+      .from('ct_offerings')
+      .select('id, status')
+      .eq('access_token', accessToken)
+      .single()
+    if (!off) return
+
+    // Promover draft/sent → viewed (no tocar responded/expired)
+    if (off.status === 'draft' || off.status === 'sent') {
+      await supabase.from('ct_offerings').update({ status: 'viewed' }).eq('id', off.id)
+    }
+  } catch (e) {
+    console.error('trackOfferingView error:', e)
+  }
+}
+
 export function getAllRecipients(
   offerings: Offering[]
 ): { offering: Offering; recipient: OfferingRecipient }[] {

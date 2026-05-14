@@ -75,6 +75,13 @@ export interface SensorReading {
   ph: number | null
   temp_c: number | null
   brix: number | null
+  orp_mv: number | null
+  sg: number | null
+  tds_ppm: number | null
+  ec_us_cm: number | null
+  salinity_ppm: number | null
+  cf: number | null
+  rh_pct: number | null
   recorded_at: string
 }
 
@@ -312,7 +319,7 @@ export async function insertarUpdate(update: NewOrderUpdate): Promise<void> {
 export async function cargarReadings(tankId: string, limit = 30): Promise<SensorReading[]> {
   const { data, error } = await supabase
     .from('sensor_readings')
-    .select('id, ph, temp_c, brix, recorded_at')
+    .select('id, ph, temp_c, brix, orp_mv, sg, tds_ppm, ec_us_cm, salinity_ppm, cf, rh_pct, recorded_at')
     .eq('tank_id', tankId)
     .order('recorded_at', { ascending: false })
     .limit(limit)

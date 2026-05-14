@@ -700,6 +700,27 @@
 .pcl-reading-card--ph   { background: #fdf0f9; border-color: #e8b3d8; color: #A8327E; }
 .pcl-reading-card--temp { background: #fef4ed; border-color: #e9c0a3; color: #C46A3C; }
 .pcl-reading-card--brix { background: #f4f5ec; border-color: #cdd0a8; color: #7D8456; }
+.pcl-reading-card--orp  { background: #f1eef7; border-color: #c9c0dd; color: #6B5B95; }
+.pcl-reading-card--sg   { background: #f5efe7; border-color: #d2bfa3; color: #8B6F47; }
+.pcl-reading-card--tds  { background: #e8f1f3; border-color: #b3cdd1; color: #2E7D8C; }
+.pcl-reading-card--ec   { background: #e6eff7; border-color: #aecae0; color: #1D6FA5; }
+.pcl-reading-card--sal  { background: #ecf2f2; border-color: #b8cbcc; color: #5A8A8C; }
+.pcl-reading-card--cf   { background: #f5efe5; border-color: #d8c5a8; color: #B89770; }
+.pcl-reading-card--rh   { background: #e9f2ef; border-color: #b5d0c6; color: #6BA89A; }
+
+/* Grid 9 cards: 3 col desktop, 2 col tablet, 1 col mobile */
+.pcl-last-reading--grid9 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+@media (max-width: 720px) {
+  .pcl-last-reading--grid9 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 420px) {
+  .pcl-last-reading--grid9 { grid-template-columns: 1fr; }
+}
+.pcl-last-reading--grid9 .pcl-reading-card { flex: none; }
 
 .pcl-reading-icon {
   opacity: 0.7;

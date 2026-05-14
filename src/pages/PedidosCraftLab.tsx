@@ -38,6 +38,7 @@ import {
   MessageSquarePlus, Truck, Beaker, Clock,
   CheckCircle2, AlertCircle, Send, Image,
   Activity, ThermometerSun, Droplets,
+  Zap, Hash, Waves, Wind, FlaskConical,
 } from 'lucide-react'
 import {
   cargarTodosPedidos,
@@ -502,10 +503,16 @@ function DetallePedidoModal({
   const lastReading = readings.length > 0 ? readings[readings.length - 1] : null
   const last10 = readings.slice(-10).reverse()
 
-  // Extraer arrays de valores para sparklines
-  const phValues    = readings.map(r => r.ph   ?? 0).filter(v => v > 0)
-  const tempValues  = readings.map(r => r.temp_c ?? 0).filter(v => v > 0)
-  const brixValues  = readings.map(r => r.brix  ?? 0).filter(v => v > 0)
+  // Extraer arrays de valores para sparklines (las 9 lecturas Tuya + brix legacy)
+  const phValues       = readings.map(r => r.ph           ?? 0).filter(v => v > 0)
+  const tempValues     = readings.map(r => r.temp_c       ?? 0).filter(v => v > 0)
+  const orpValues      = readings.map(r => r.orp_mv       ?? 0).filter(v => v !== 0)
+  const sgValues       = readings.map(r => r.sg           ?? 0).filter(v => v > 0)
+  const tdsValues      = readings.map(r => r.tds_ppm      ?? 0).filter(v => v > 0)
+  const ecValues       = readings.map(r => r.ec_us_cm     ?? 0).filter(v => v > 0)
+  const salValues      = readings.map(r => r.salinity_ppm ?? 0).filter(v => v > 0)
+  const cfValues       = readings.map(r => r.cf           ?? 0).filter(v => v > 0)
+  const rhValues       = readings.map(r => r.rh_pct       ?? 0).filter(v => v > 0)
 
   // Tank name activo (puede ser del selector o del pedido)
   const activeTankName = tanques.find(t => t.id === (tanqueSeleccionado || pedido.tank_id))?.name
@@ -726,9 +733,9 @@ function DetallePedidoModal({
               </div>
             ) : (
               <>
-                {/* Last reading — números grandes */}
+                {/* Last reading — 9 datos del monitor Tuya */}
                 {lastReading && (
-                  <div className="pcl-last-reading">
+                  <div className="pcl-last-reading pcl-last-reading--grid9">
                     <div className="pcl-reading-card pcl-reading-card--ph">
                       <div className="pcl-reading-icon"><Droplets size={14} /></div>
                       <div className="pcl-reading-value">{lastReading.ph?.toFixed(2) ?? '—'}</div>
@@ -737,17 +744,47 @@ function DetallePedidoModal({
                     <div className="pcl-reading-card pcl-reading-card--temp">
                       <div className="pcl-reading-icon"><ThermometerSun size={14} /></div>
                       <div className="pcl-reading-value">{lastReading.temp_c?.toFixed(1) ?? '—'}</div>
-                      <div className="pcl-reading-label">°C</div>
+                      <div className="pcl-reading-label">Temp °C</div>
                     </div>
-                    <div className="pcl-reading-card pcl-reading-card--brix">
+                    <div className="pcl-reading-card pcl-reading-card--orp">
+                      <div className="pcl-reading-icon"><Zap size={14} /></div>
+                      <div className="pcl-reading-value">{lastReading.orp_mv != null ? Math.round(lastReading.orp_mv) : '—'}</div>
+                      <div className="pcl-reading-label">ORP mV</div>
+                    </div>
+                    <div className="pcl-reading-card pcl-reading-card--sg">
+                      <div className="pcl-reading-icon"><FlaskConical size={14} /></div>
+                      <div className="pcl-reading-value">{lastReading.sg?.toFixed(3) ?? '—'}</div>
+                      <div className="pcl-reading-label">Densidad SG</div>
+                    </div>
+                    <div className="pcl-reading-card pcl-reading-card--tds">
                       <div className="pcl-reading-icon"><Activity size={14} /></div>
-                      <div className="pcl-reading-value">{lastReading.brix?.toFixed(1) ?? '—'}</div>
-                      <div className="pcl-reading-label">°Brix</div>
+                      <div className="pcl-reading-value">{lastReading.tds_ppm != null ? Math.round(lastReading.tds_ppm) : '—'}</div>
+                      <div className="pcl-reading-label">TDS ppm</div>
+                    </div>
+                    <div className="pcl-reading-card pcl-reading-card--ec">
+                      <div className="pcl-reading-icon"><Zap size={14} /></div>
+                      <div className="pcl-reading-value">{lastReading.ec_us_cm != null ? Math.round(lastReading.ec_us_cm) : '—'}</div>
+                      <div className="pcl-reading-label">EC µS/cm</div>
+                    </div>
+                    <div className="pcl-reading-card pcl-reading-card--sal">
+                      <div className="pcl-reading-icon"><Waves size={14} /></div>
+                      <div className="pcl-reading-value">{lastReading.salinity_ppm != null ? Math.round(lastReading.salinity_ppm) : '—'}</div>
+                      <div className="pcl-reading-label">Salinidad ppm</div>
+                    </div>
+                    <div className="pcl-reading-card pcl-reading-card--cf">
+                      <div className="pcl-reading-icon"><Hash size={14} /></div>
+                      <div className="pcl-reading-value">{lastReading.cf?.toFixed(2) ?? '—'}</div>
+                      <div className="pcl-reading-label">CF</div>
+                    </div>
+                    <div className="pcl-reading-card pcl-reading-card--rh">
+                      <div className="pcl-reading-icon"><Wind size={14} /></div>
+                      <div className="pcl-reading-value">{lastReading.rh_pct?.toFixed(1) ?? '—'}</div>
+                      <div className="pcl-reading-label">Humedad %</div>
                     </div>
                   </div>
                 )}
 
-                {/* Sparklines */}
+                {/* Sparklines — las 9 lecturas del monitor Tuya */}
                 <div className="pcl-sparklines-row">
                   {phValues.length >= 2 && (
                     <div className="pcl-sparkline-block">
@@ -767,18 +804,72 @@ function DetallePedidoModal({
                       </span>
                     </div>
                   )}
-                  {brixValues.length >= 2 && (
+                  {orpValues.length >= 2 && (
                     <div className="pcl-sparkline-block">
-                      <span className="pcl-sparkline-label" style={{ color: '#7D8456' }}>Brix</span>
-                      <Sparkline values={brixValues} color="#7D8456" />
+                      <span className="pcl-sparkline-label" style={{ color: '#6B5B95' }}>ORP</span>
+                      <Sparkline values={orpValues} color="#6B5B95" />
                       <span className="pcl-sparkline-range">
-                        {Math.min(...brixValues).toFixed(1)} – {Math.max(...brixValues).toFixed(1)}
+                        {Math.round(Math.min(...orpValues))} – {Math.round(Math.max(...orpValues))} mV
+                      </span>
+                    </div>
+                  )}
+                  {sgValues.length >= 2 && (
+                    <div className="pcl-sparkline-block">
+                      <span className="pcl-sparkline-label" style={{ color: '#8B6F47' }}>SG</span>
+                      <Sparkline values={sgValues} color="#8B6F47" />
+                      <span className="pcl-sparkline-range">
+                        {Math.min(...sgValues).toFixed(3)} – {Math.max(...sgValues).toFixed(3)}
+                      </span>
+                    </div>
+                  )}
+                  {tdsValues.length >= 2 && (
+                    <div className="pcl-sparkline-block">
+                      <span className="pcl-sparkline-label" style={{ color: '#2E7D8C' }}>TDS</span>
+                      <Sparkline values={tdsValues} color="#2E7D8C" />
+                      <span className="pcl-sparkline-range">
+                        {Math.round(Math.min(...tdsValues))} – {Math.round(Math.max(...tdsValues))} ppm
+                      </span>
+                    </div>
+                  )}
+                  {ecValues.length >= 2 && (
+                    <div className="pcl-sparkline-block">
+                      <span className="pcl-sparkline-label" style={{ color: '#1D6FA5' }}>EC</span>
+                      <Sparkline values={ecValues} color="#1D6FA5" />
+                      <span className="pcl-sparkline-range">
+                        {Math.round(Math.min(...ecValues))} – {Math.round(Math.max(...ecValues))} µS/cm
+                      </span>
+                    </div>
+                  )}
+                  {salValues.length >= 2 && (
+                    <div className="pcl-sparkline-block">
+                      <span className="pcl-sparkline-label" style={{ color: '#5A8A8C' }}>Salinidad</span>
+                      <Sparkline values={salValues} color="#5A8A8C" />
+                      <span className="pcl-sparkline-range">
+                        {Math.round(Math.min(...salValues))} – {Math.round(Math.max(...salValues))} ppm
+                      </span>
+                    </div>
+                  )}
+                  {cfValues.length >= 2 && (
+                    <div className="pcl-sparkline-block">
+                      <span className="pcl-sparkline-label" style={{ color: '#B89770' }}>CF</span>
+                      <Sparkline values={cfValues} color="#B89770" />
+                      <span className="pcl-sparkline-range">
+                        {Math.min(...cfValues).toFixed(2)} – {Math.max(...cfValues).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  {rhValues.length >= 2 && (
+                    <div className="pcl-sparkline-block">
+                      <span className="pcl-sparkline-label" style={{ color: '#6BA89A' }}>Humedad</span>
+                      <Sparkline values={rhValues} color="#6BA89A" />
+                      <span className="pcl-sparkline-range">
+                        {Math.min(...rhValues).toFixed(1)} – {Math.max(...rhValues).toFixed(1)} %
                       </span>
                     </div>
                   )}
                 </div>
 
-                {/* Tabla últimas 10 lecturas */}
+                {/* Tabla últimas 10 lecturas — 9 datos Tuya */}
                 <div className="pcl-readings-table-wrap">
                   <table className="pcl-readings-table">
                     <thead>
@@ -786,7 +877,13 @@ function DetallePedidoModal({
                         <th>Hora</th>
                         <th>pH</th>
                         <th>°C</th>
-                        <th>°Brix</th>
+                        <th>ORP</th>
+                        <th>SG</th>
+                        <th>TDS</th>
+                        <th>EC</th>
+                        <th>Sal.</th>
+                        <th>CF</th>
+                        <th>RH%</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -795,7 +892,13 @@ function DetallePedidoModal({
                           <td>{formatDateTime(r.recorded_at)}</td>
                           <td>{r.ph?.toFixed(2) ?? '—'}</td>
                           <td>{r.temp_c?.toFixed(1) ?? '—'}</td>
-                          <td>{r.brix?.toFixed(1) ?? '—'}</td>
+                          <td>{r.orp_mv != null ? Math.round(r.orp_mv) : '—'}</td>
+                          <td>{r.sg?.toFixed(3) ?? '—'}</td>
+                          <td>{r.tds_ppm != null ? Math.round(r.tds_ppm) : '—'}</td>
+                          <td>{r.ec_us_cm != null ? Math.round(r.ec_us_cm) : '—'}</td>
+                          <td>{r.salinity_ppm != null ? Math.round(r.salinity_ppm) : '—'}</td>
+                          <td>{r.cf?.toFixed(2) ?? '—'}</td>
+                          <td>{r.rh_pct?.toFixed(1) ?? '—'}</td>
                         </tr>
                       ))}
                     </tbody>

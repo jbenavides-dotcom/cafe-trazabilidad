@@ -1,0 +1,36 @@
+{
+  "name": "Tuya → Supabase sensor_readings (CRON 4h)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "hours", "hoursInterval": 4 }]
+        }
+      },
+      "id": "schedule-1",
+      "name": "Cada 4 horas",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Tuya → Supabase sensor_readings — LP&ET cron 4h\n// Reemplazar las constantes con valores reales antes de activar el workflow.\nconst crypto = require('crypto');\n\nconst ACCESS_ID     = '__TUYA_ACCESS_ID__';\nconst ACCESS_SECRET = '__TUYA_ACCESS_SECRET__';\nconst BASE_URL      = 'https://openapi.tuyaus.com';\nconst DEVICE_ID     = '__TUYA_DEVICE_ID__';\n\nconst SUPABASE_URL  = '__SUPABASE_URL__';\nconst SUPABASE_KEY  = '__SUPABASE_SERVICE_OR_ANON_KEY__';\nconst TANK_ID       = '__TANK_UUID__';\nconst PH_OFFSET     = 0; // ajuste tras calibración\n\nfunction sha256Hex(m){return crypto.createHash('sha256').update(m,'utf8').digest('hex');}\nfunction hmacSha256(k,m){return crypto.createHmac('sha256',k).update(m,'utf8').digest('hex').toUpperCase();}\n\nasync function callTuya(method, path, accessToken){\n  const t = Date.now().toString();\n  const contentSha = sha256Hex('');\n  const stringToSign = method + '\\n' + contentSha + '\\n\\n' + path;\n  const signStr = accessToken\n    ? ACCESS_ID + accessToken + t + stringToSign\n    : ACCESS_ID + t + stringToSign;\n  const sign = hmacSha256(ACCESS_SECRET, signStr);\n  const headers = { client_id: ACCESS_ID, sign, t, sign_method: 'HMAC-SHA256' };\n  if (accessToken) headers.access_token = accessToken;\n  return await this.helpers.httpRequest({ method, url: BASE_URL + path, headers, json: true });\n}\n\nconst tokenRes = await callTuya.call(this, 'GET', '/v1.0/token?grant_type=1');\nif (!tokenRes.success) return [{ json: { ok:false, error:'token_fail', detail: tokenRes } }];\nconst token = tokenRes.result.access_token;\n\nconst shadowRes = await callTuya.call(this, 'GET', '/v2.0/cloud/thing/' + DEVICE_ID + '/shadow/properties', token);\nif (!shadowRes.success) return [{ json: { ok:false, error:'shadow_fail', detail: shadowRes } }];\n\nconst props = shadowRes.result.properties || [];\nconst byCode = Object.fromEntries(props.map(p => [p.code, p]));\nconst val = (c, s) => { const p = byCode[c]; return p ? p.value / s : null; };\n\nconst phRaw  = val('ph_current', 100);\nconst phAdj  = phRaw != null ? +(phRaw + PH_OFFSET).toFixed(2) : null;\nconst tempC  = val('temp_current', 10);\nconst orpMv  = val('orp_current', 1);\nconst sg     = val('pro_current', 1000);\nconst tdsPpm = val('tds_current', 1);\nconst ecUsCm = val('ec_current', 1);\nconst salPpm = val('salinity_current', 1);\nconst cf     = val('cf_current', 100);\nconst rhPct  = val('rh_current', 1);\n// Brix legacy: aproximación desde SG\nconst brixApprox = sg != null ? +(((sg - 1) * 1000) / 4).toFixed(2) : null;\n\nconst payload = {\n  tank_id: TANK_ID,\n  ph: phAdj,\n  temp_c: tempC,\n  brix: brixApprox,\n  orp_mv: orpMv,\n  sg,\n  tds_ppm: tdsPpm,\n  ec_us_cm: ecUsCm,\n  salinity_ppm: salPpm,\n  cf,\n  rh_pct: rhPct\n};\n\nconst supaRes = await this.helpers.httpRequest({\n  method: 'POST',\n  url: SUPABASE_URL + '/rest/v1/sensor_readings',\n  headers: {\n    apikey: SUPABASE_KEY,\n    Authorization: 'Bearer ' + SUPABASE_KEY,\n    'Content-Type': 'application/json',\n    Prefer: 'return=minimal'\n  },\n  body: payload,\n  json: true\n});\n\nreturn [{ json: {\n  ok: true,\n  fetched_at: new Date().toISOString(),\n  payload,\n  supabase_response: supaRes\n}}];"
+      },
+      "id": "code-1",
+      "name": "Tuya → Supabase",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "Cada 4 horas": {
+      "main": [[{ "node": "Tuya → Supabase", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota"
+  }
+}

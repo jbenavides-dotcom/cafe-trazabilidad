@@ -1,0 +1,60 @@
+{
+  "name": "Tuya Fermentacion Proxy — LP&ET (LIVE on-demand)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "tuya-fermentacion",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook GET /tuya-fermentacion",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "tuya-fermentacion-lpet"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Tuya Cloud API proxy — Cafe Fermentacion LP&ET\n// Reemplazar las constantes con los valores reales antes de activar el workflow.\nconst crypto = require('crypto');\n\nconst ACCESS_ID     = '__TUYA_ACCESS_ID__';\nconst ACCESS_SECRET = '__TUYA_ACCESS_SECRET__';\nconst BASE_URL      = 'https://openapi.tuyaus.com';\nconst DEVICE_ID     = '__TUYA_DEVICE_ID__';\n\nfunction sha256Hex(message) {\n  return crypto.createHash('sha256').update(message, 'utf8').digest('hex');\n}\nfunction hmacSha256(key, message) {\n  return crypto.createHmac('sha256', key).update(message, 'utf8').digest('hex').toUpperCase();\n}\n\nasync function callTuya(method, path, accessToken = null) {\n  const t = Date.now().toString();\n  const contentSha = sha256Hex('');\n  const stringToSign = `${method}\\n${contentSha}\\n\\n${path}`;\n  const signStr = accessToken\n    ? `${ACCESS_ID}${accessToken}${t}${stringToSign}`\n    : `${ACCESS_ID}${t}${stringToSign}`;\n  const sign = hmacSha256(ACCESS_SECRET, signStr);\n\n  const headers = {\n    client_id: ACCESS_ID,\n    sign,\n    t,\n    sign_method: 'HMAC-SHA256'\n  };\n  if (accessToken) headers.access_token = accessToken;\n\n  const res = await this.helpers.httpRequest({\n    method,\n    url: `${BASE_URL}${path}`,\n    headers,\n    json: true\n  });\n  return res;\n}\n\n// 1) Token\nconst tokenRes = await callTuya.call(this, 'GET', '/v1.0/token?grant_type=1');\nif (!tokenRes.success) {\n  return [{ json: { ok: false, error: 'token_fail', detail: tokenRes } }];\n}\nconst token = tokenRes.result.access_token;\n\n// 2) Shadow properties\nconst shadowRes = await callTuya.call(this, 'GET', `/v2.0/cloud/thing/${DEVICE_ID}/shadow/properties`, token);\nif (!shadowRes.success) {\n  return [{ json: { ok: false, error: 'shadow_fail', detail: shadowRes } }];\n}\n\n// 3) Decode the 9 DPs\nconst props = shadowRes.result.properties || [];\nconst byCode = Object.fromEntries(props.map(p => [p.code, p]));\nconst val = (c, s) => { const p = byCode[c]; return p ? p.value / s : null; };\nconst tsOf = c => { const p = byCode[c]; return p ? p.time : null; };\n\nconst payload = {\n  ok: true,\n  device_id: DEVICE_ID,\n  fetched_at: new Date().toISOString(),\n  source_t: shadowRes.t,\n  readings: {\n    temp_c:       val('temp_current', 10),\n    ph:           val('ph_current', 100),\n    orp_mv:       val('orp_current', 1),\n    sg:           val('pro_current', 1000),\n    tds_ppm:      val('tds_current', 1),\n    ec_us_cm:     val('ec_current', 1),\n    salinity_ppm: val('salinity_current', 1),\n    cf:           val('cf_current', 100),\n    rh_pct:       val('rh_current', 1)\n  },\n  last_reading_t: tsOf('temp_current'),\n  raw_count: props.length\n};\n\nreturn [{ json: payload }];\n"
+      },
+      "id": "tuya-fetch-code",
+      "name": "Tuya Fetch + Decode",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Access-Control-Allow-Origin", "value": "*" },
+              { "name": "Cache-Control", "value": "no-store" }
+            ]
+          }
+        }
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [720, 300]
+    }
+  ],
+  "connections": {
+    "Webhook GET /tuya-fermentacion": {
+      "main": [[{ "node": "Tuya Fetch + Decode", "type": "main", "index": 0 }]]
+    },
+    "Tuya Fetch + Decode": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
